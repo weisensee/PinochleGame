@@ -1,0 +1,23 @@
+this is for four-handed weisensee pinochle:
+
+king + queen		20
+	in trump		40
+	in every suit	240 (by virtue of queens, kings and marriages)
+
+family			150
+	double		1500
+
+in each suit:
+Ace			100
+	double	1000
+kings 		80
+	double 	800
+queens		60
+	double	600
+jacks		40
+	double	400
+
+nine (trump)	10 each
+
+Pinochle	40
+	double	300

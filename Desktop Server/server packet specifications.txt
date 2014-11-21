@@ -1,0 +1,42 @@
+Packet and Client Communication Specifications for the Desktop Pinochle Server
+
+	Outlines and details the order and data types send/received with pinochle playing clients
+
+Packet Phase  Description: Detailed description
+				detailed component description
+
+C1. 	Connection initiates.
+
+S1	Server Acknowledges Connection and Readiness to Continue: [ServerStatus]
+		ServerStatus: (short)n
+			0: server not ready
+			1: server ready
+
+C2.	Client sends char array "answer":
+		answer[0]:
+			0: initiates database access mode
+			1: request the list of active games
+
+S2	Server sends active game list
+		1: Char array of games separated by "/": game1/game2/game3
+			game: X^gameID^gameName^gamecreator^playera^playerb^playern
+				X:status
+					P: playing
+					W: waiting
+					F: full
+				gameID: (int) ID number for specific game
+				gameName: Char Array
+				playerNames: Char Array
+
+C3.	Client sends choice about which game to play: (int) game ID
+		1n%s: create new game with n users and %s name
+		xn:  join game x as n user
+
+S3	Server adds Client to specified game and indicates connection result
+		result: [ConnectionResult][GamePosition]
+			ConnectionResult: (short) indicates result of connection attempt
+				0: Connection Failure - return to S2
+				9: Connection Success - only observer status available
+				ab: player a and player b positions available (convert to string)
+			GamePosition: (short) indicates step of play the current game is in
+				n: corresponding step
