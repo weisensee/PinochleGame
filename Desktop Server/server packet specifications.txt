@@ -12,13 +12,14 @@ S1	Server Acknowledges Connection and Readiness to Continue: [ServerStatus]
 			0: server not ready
 			1: server ready
 
-C2.	Client sends char array "answer":
-		answer[0]:
+C2.	Client sends char array "Response1":
+		Response1[0]:
 			0: initiates database access mode
 			1: request the list of active games
+		Response1[1]: (string) player name
 
 S2	Server sends active game list
-		1: Char array of games separated by "/": game1/game2/game3
+		1: Char array of games separated by "/": game1/game2/game3/*
 			game: X^gameID^gameName^gamecreator^playera^playerb^playern
 				X:status
 					P: playing
@@ -29,8 +30,12 @@ S2	Server sends active game list
 				playerNames: Char Array
 
 C3.	Client sends choice about which game to play: (int) game ID
-		1n%s: create new game with n users and %s name
-		xn:  join game x as n user
+		1^n^%s: create new game with n users and %s Gamename, '^': char delimiter between data values
+			1: unsigned short == 1
+			^: char == '^'
+			n: unsigned char
+			%s: string '\0' delimited string
+		x^n:  join game x as n user
 
 S3	Server adds Client to specified game and indicates connection result
 		result: [ConnectionResult][GamePosition]
