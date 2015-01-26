@@ -19,17 +19,18 @@
 class game
 {
 public:
-	game(SOCKET ClientSocket, char * gamename, char * playerName);	//single player constructor
+	game(SOCKET ClientSocket, char * gamename, char * playerName, unsigned char maxPlayers);	//single player constructor
 	game();								//default constructor
 	~game();							//deallocates current game
 	int addPlayer(int i, char * pname, SOCKET playerSocket);	//add's player with pname to spot i, returns result info
-	
+	bool initiated();					//returns true if game was initiated successfully
+	void run();								//starts the game running
 
 private:
 	int playcard(char card);			//attempts to play next card on current round
 	bool ready();						//returns true if game is full and players are ready
 	void quit(int type);				//quits the current game
-	int getCurrentPos()					//returns current position of game
+	int getCurrentPos();				//returns current position of game
 
 	char * gameName;
 	short players;

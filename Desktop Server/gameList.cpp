@@ -57,7 +57,7 @@ int add(char * gamename, char * playerName, HANDLE threadHandle)		//add game wit
 		tail = tail -> next;		//update tail pointer
 }
 
-bool getCurrent(char * sendList)		//copies formatted list of current active games to sendList
+bool getCurrent(char * sendList)		//copies formatted list of current active games to sendList, returns true if list existed
 {
 	// Initiate pointers
 	std::string toSend; 
@@ -71,12 +71,14 @@ bool getCurrent(char * sendList)		//copies formatted list of current active game
 			current = current->next;					//move to next node
 		}
 		toSend += "*";			//append closing symbol
-		sendList = toSend;		//save to buffer string
+		sendList = new char[toSend.length()]
+		strcpy(sendList, toSend);			//save to buffer string
 	}
 
 	// If the list doesnt exist return 0
 	else 
 		return 0;
+	return true;			// returns sucess if list existed
 }
 
 int total_games()						//returns total active games in list

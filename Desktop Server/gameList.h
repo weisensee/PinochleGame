@@ -7,19 +7,21 @@
 #ifndef HEADER_GAMELIST_H
 #define HEADER_GAMELIST_H
 
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\game.h"
 #include "gameListNode.h"
 #include <string.h>
 
 
 class gameList
-{
+{	
 public:
 	gameList(unsigned short MAX_LENGTH);	//constructs a game list of linked nodes with max length MAX_LENGTH
 	gameList();					//constructs a game list with MAX_LENGTH = 10 (see gameList.cpp)
 	~gameList();				//destructor
-	int add(char * gamename, char * playerName, HANDLE threadHandle);		//add game with specified components to list if it's not already there
+	int addGame(char * gamename, char * playerName, HANDLE threadHandle);		//add game with specified components to list if it's not already there
+	bool addPlayer(unsigned short gameID, char * playerName, SOCKET clientSocket, unsigned char playerNum);	//add specified player to specified game
 	int add(game * ngame);							//add ngame to list of active games
-	bool getCurrent(char * sendList);	//copies formatted list of current active games to sendList
+	bool getCurrent(char * sendList);	//copies formatted list of current active games to sendList, returns true if list existed
 	int total_games();					//returns total active games in list
 	bool updateStatus(unsigned short gameID, char status);		//updates the lists current status for a specific game
 

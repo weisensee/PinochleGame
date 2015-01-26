@@ -4,6 +4,7 @@ Packet and Client Communication Specifications for the Desktop Pinochle Server
 
 Packet Phase  Description: Detailed description
 				detailed component description
+C => from Client   S => from Server
 
 C1. 	Connection initiates.
 

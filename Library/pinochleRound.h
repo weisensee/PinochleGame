@@ -14,13 +14,13 @@
 class pinochleRound
 {
 public:
-	pinochleRound(arguments);
+	pinochleRound();
 	~pinochleRound();
 	int playcard(char card);
 private:
 	char handdealt;
 	short bid;
-	char[2] bidwinner;
-	short * meld
-	char[48] cardsplayed;
+	char bidwinner[2];
+	short * meld;
+	char cardsplayed[48];
 };

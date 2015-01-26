@@ -12,7 +12,7 @@ This program will function as a desktop game server for a network based pinochle
 -Spinn off processes to handle new games.
 -Allow new players to connect to games in progress.
 -Keep track of games in progress.
--Allow games to be added to database
+-Allow games to be added to the database
 -Allow games to be requested from the database.
 
 */
@@ -30,6 +30,7 @@ This program will function as a desktop game server for a network based pinochle
 #include <ws2tcpip.h>
 #pragma comment (lib, "Ws2_32.lib")	//Winsock server needs to be linked with libraries
 
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\log.h"		//Log writing library
 #include "gameList.h"
 
 #define DEFAULT_BUFLEN 512
@@ -37,59 +38,39 @@ int MAX_THREADS = 20;
 int MAX_GAMES = 10;
 
 gameList ACTIVE_GAMES(MAX_GAMES);		// List of general info on all active games
-char * LOG_FILE_NAME;					// Log file's name
 int connections;						// number of connections accepted
+int gameCounter;						// number of active games
 
-
+void serverSetupPrep(int argc, char const *argv[], char * nPORT);		//Sets up the new server, checks inputs
 DWORD WINAPI handleNewClient(LPVOID* newSocket);
 void sendGameList(SOCKET ClientSocket, char * answer);			//sends active game list to client
 void interpretClientGameChoice(char * cResponse1, SOCKET ClientSocket, char * gameChoice);	//interprets client's commands/choice
 void receiveError(SOCKET ClientSocket);							//handles a receive error, prints to log
 void accessDatabase(char * playerName, SOCKET ClientSocket);	//handles client access to database
 void createGame(SOCKET ClientSocket, char * gamename, char * playerName, unsigned char maxplayers);	//initiates the creation of a new game
-void joinGame(SOCKET ClientSocket, int n);						//sends the client to the game specified
-void writetolog(char * report);									//writes report to log file
-void writetolog(char * report, int error);						//writes errror report to log file
+void joinGame(int gameNumber, char * playerName, SOCKET ClientSocket, unsigned char playernum);	//sends the client to the game specified
 void setLogFileName();											//sets log file name with time, date and PID info
 
 bool checkPlayPinochle(char * cResponse1);				// Check player's response1:: returns true if player name string included
 
-int main(int argc, char const *argv[])
-{
-	/*
-	char testing[4];
-	printf("testing location 2, argv[1]: %s\n", argv[1]);
-	std::cin.getline(testing, '\n');
-	*/
+int main(int argc, char const *argv[]) {
 
+	int result;				// setup result variable, used for error checking
+	char nPORT[6];			// The port number to be used for listening
+	serverSetupPrep(argc, argv, nPORT);	// Check inputs and initate sever settings 
 
-
-		//Check for proper command line usage
-	if (argc < 2) {
-		fprintf(stderr, "\n%s usage: %s portnumber\n", argv[0], argv[0]);
-		exit(0);
-	}
-
-	setLogFileName();
-
-	printf("\nSetting up connection\n");
-
-	char nPORT[6];
-	strcpy(nPORT, argv[1]);
-	nPORT[strlen(argv[1])] = '\0';
-
-	// DWORD   ThreadIdArray[MAX_THREADS];		//Threads the server has created
-	//HANDLE  ThreadArray[MAX_THREADS]; 		//stores thread handles
+				// DWORD   ThreadIdArray[MAX_THREADS];		//Threads the server has created
+				// HANDLE  ThreadArray[MAX_THREADS]; 		//stores thread handles
 
 	//initialize windows socket
+	//initializeWinSocket()
 	WSADATA wsaData;
 
-	int result;
+
 
 	// Initiate Windows Socket
 	result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (result != 0)
-	{
+	if (result != 0){
 		writetolog("WSAStartup failed! Returned:%d\n", result);
 		return 1;
 	}
@@ -107,8 +88,7 @@ int main(int argc, char const *argv[])
 	//Get's address info from system for port and socket connection
 
 	result = getaddrinfo(NULL, nPORT, &hints, &socketInfo);
-	if (result != 0)
-	{
+	if (result != 0){
 		writetolog("getaddrinfo failed with error: %d\n", result);
 		WSACleanup();	//deallocate memory and quit
 		return 1;
@@ -181,7 +161,24 @@ int main(int argc, char const *argv[])
 		connections++;
 	}
 }
+void setupServer(int argc, char const *argv[], char * nPORT)		//Sets up the new server, prepares to listen for connections
+{
+	//Check for proper command line usage
+	if (argc < 2) {
+		fprintf(stderr, "\n%s usage: %s portnumber\n", argv[0], argv[0]);
+		exit(0);
+	}
 
+	// Set port number
+	strcpy(nPORT, argv[1]);
+	nPORT[strlen(argv[1])] = '\0';
+
+	// Initiate global variables
+	setLogFileName();
+	gameCounter = 0;
+
+	printf("\nSetting up connection\n");
+}
 	// Handles an individual Client::
 /* 
 	Parses and Executes Client's commands
@@ -242,14 +239,16 @@ void interpretClientGameChoice(char * cResponse1, SOCKET ClientSocket, char * cR
 		// execute game request
 		if(gameChoice == 1)					//if the player requested a new game
 			//create the new game: socket, playername, gamename, maxplayers:
-			createGame(ClientSocket, cResponse1[1], cResponse2[4], (unsigned char)cResponse1[2]);	
-		else if (*gameChoice > 1)								//otherwise join the game requested
-			joinGame(ClientSocket, answer[0]);
-		else if (*gameChoice < 0)								//write to log if errors result
-			writetolog("join game response failure: ", WSAGetLastError())	
+			createGame(ClientSocket, &cResponse1[1], &cResponse2[4], (unsigned char)cResponse1[2]);	
+		else if (gameChoice > 1)								//otherwise join the game requested
+			// join game: gameID, playerName, PlayerSocket, PlayNumber:
+			joinGame(gameChoice, &cResponse1[1], ClientSocket, cResponse2[3]);
+		else if (gameChoice < 0)								//write to log if errors result
+			writetolog("join game response failure: ", WSAGetLastError());	
 		}
-	if(mainChoice[0] == 0)	//initiate database connection if the client requests it
-		accessDatabase(playerName, ClientSocket);
+	if(cResponse1[0] == 0)	//initiate database connection if the client requests it
+		// Start database access with: playerName, Socket
+		accessDatabase(&cResponse1[1], ClientSocket);
 }
 
 // Check player's response1:: returns true if player name string included
@@ -257,10 +256,10 @@ bool checkPlayPinochle(char * cResponse1)
 {
 	// If the client wants to play and sent the packet in correct format
 	if(cResponse1[0] == 1 && '^' == cResponse1[1])		//if they chose to play
-		if (&& cResponse1[2] >0)						//and included a player name
+		if (cResponse1[2] >0)						//and included a player name
 			return 1;
-		else {
-			writetolog("error with appended playerName in cResponse1: ", cResponse1[2])
+		else 
+			writetolog("error with appended playerName in cResponse1: ", cResponse1[2]);
 	return 0;
 }
 
@@ -269,78 +268,40 @@ void receiveError(SOCKET ClientSocket)		//handles a receive error, prints to log
 		writetolog("receive failed", WSAGetLastError());
 		closesocket(ClientSocket);
 		WSACleanup();
-		return 1;
 }
 
-void accessDatabase(playerName, ClientSocket)	// handles client access to database
+void accessDatabase(char * playerName, SOCKET ClientSocket)	// handles client access to database
 {
-	char buffer[DEFAULT_BUFLEN];
-	strcpy(buffer, "Hi, " + playerName + "! \ngame database coming soon...");
-	send(ClientSocket, buffer, strlen(buffer), 0);
+	std::string buffer;
+	buffer += "Hi, " ;
+	buffer += *playerName;
+	buffer += "! \ngame database coming soon...";
+	send(ClientSocket, buffer.c_str(), buffer.length(), 0);
 }
 
 // Creates a new game with given arguments and adds it to list.
 void createGame(SOCKET ClientSocket, char * gamename, char * playerName, unsigned char maxplayers)	
 {
-	// Initiate and Start game
-	if(game(ClientSocket, gamename, playerName, maxplayers)) {		//If initiation is successful:
-		ACTIVE_GAMES.add(game);							// add to global active game list
-		game.run();										// start game
+	// Initiate game
+	game newGame(ClientSocket, gamename, playerName, maxplayers); 
+
+	if(newGame.initiated())  {						//If initiation is successful:
+		ACTIVE_GAMES.add(&newGame);							// add to global active newGame list
+		newGame.run();										// start newGame
 	}
 	else
 		writetolog("game initiation failure");			// Otherwise write failure to log file
 }
 
 // Adds specified client to game
-int joinGame(int gameNumber, SOCKET ClientSocket, int n)				// sends the client to the game specified
+void joinGame(int gameNumber, char * playerName, SOCKET ClientSocket, unsigned char playernum)				// sends the client to the game specified
 {
-	return ACTIVE_GAMES[i].addPlayer(gameNumber, ClientSocket, n);		// adds player to game, returns result
+	int result = ACTIVE_GAMES.addPlayer(gameNumber, playerName, ClientSocket, playernum);		// adds player to game, returns result
+	if(result)
+		exit(EXIT_SUCCESS);
+	else {
+		writetolog("ACTIVE_GAMES.addPlayer() failure: ", result);
+		exit(EXIT_SUCCESS);
+	}
 }
 
-void writetolog(std::string * treport)					//writes report to log file
-{
-	//generate report
-	std::string * report = addTimeString(treport)
-
-	//open log file
-	FILE * logFile = fopen(LOG_FILE_NAME)
-
-	//write string to file
-	fprintf(logFile, "%s\n", report);
-
-	//close log file
-	logFile.fclose();
-	delete treport;		//deallocate report string
-}
-
-// Appends system time to string for log/error reporting
-// report_string dayofweek SystemTime: MM/DD/YYYY HH:MM:SS
-std::string addTimeString(std::string * treport)
-{
-	SYSTEMTIME time;
-	GetSystemTime(time);
-	treport += " " + time.wDayOfWeek + " SysTime: " + time.wMonth + "/" + time.wDay + "/" + time.wYear + " " + time.wHour + ":" time.wMinute + ":" + time.wSecond;
-	return treport;
-}
-
-// Adds error to report and sends to be written to logfile
-void writetolog(char * report, int error)		//writes errror report to log file
-{
-	char catReport[strlen(report) + 10];		//create new concatenaten string
-	strcpy(catReport, report);
-	strcat(catReport, error);
-	writetolog(catReport);						//send concatenated report
-}
-
-// Sets LOG_FILE_NAME with date and PID info
-// MM/DD/YYYY HH:MM:SS:mSmS pid [int processID]
-void setLogFileName()
-{
-	connections = 0;
-	SYSTEMTIME time;
-	GetSystemTime(time);
-	std::string * name = "\nConnections: " + connections + " " + time.wMonth + "/" + time.wDay + "/" + time.wYear + " " + time.wHour + ":" time.wMinute + ":" + time.wSecond + ":" +time.wMilliseconds " pid " + GetCurrentProcessId();
-	LOG_FILE_NAME = name;
-	name.insert(0, "Log File Created: ");
-	writetolog(name)
-}
