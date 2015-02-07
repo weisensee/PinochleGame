@@ -2,8 +2,6 @@
 
 	functions for game list node items
 
-
-	checking github on vs
 */
 
 #include "gameListNode.h"

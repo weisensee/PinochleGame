@@ -129,9 +129,9 @@ int gameList::add(gameListNode * ngame)							//add ngame to list of active game
 	return find_preceeding(gameID).updateStatus(status);		//find game and send update
 }
 
-//returns a pointer to the node preceeding gameID. 
-	//returns -1 if failed, 0 if head, * to node otherwise
-	gameListNode* gameList::find_preceeding(unsigned short gameID) {
+// Returns a pointer to the node preceeding gameID. 
+// returns -1 if failed, 0 if head, * to node otherwise
+gameListNode* gameList::find_preceeding(int gameID) {
 
 	//check head Node return 1 if match
 	if (*head.getID() == gameID) {
