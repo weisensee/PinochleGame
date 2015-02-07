@@ -22,8 +22,8 @@ public:
 	~gameList();				//destructor
 	int addGame(char * gamename, char * playerName, HANDLE threadHandle);		//add game with specified components to list if it's not already there
 	bool addPlayer(int gameID, char * playerName, SOCKET clientSocket, int playerNum);	//add specified player to specified game
-	int add(gameListNode * ngame);							//add ngame to list of active games
-	int addGame(int ngameID, std::string *ngameName, std::string *nplayerName, HANDLE * ngameHandle, char nstatus, int nplayers);
+	int add(gameListNode * ngame);							// add ngame to list of active games
+	int addGame(_PROCESS_INFORMATION * processInfo, player * curClient);					// add new process/game and client to list
 	bool getCurrent(std::string* sendList);	//copies formatted list of current active games to sendList, returns true if list existed
 	int total_games();					//returns total active games in list
 	bool updateStatus(int gameID, char status);		//updates the lists current status for a specific game

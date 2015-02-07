@@ -18,6 +18,8 @@ This program will function as a desktop game server for a network based pinochle
 
 	******************************
 	TO DO:
+		-accept updates to the active game list from child processes
+			-implement mutex lock on active game list
 		-error check/parse user answer for different answers/menu navigation than expected
 		-keep track of threads created and make sure they're all cleaned up
 
@@ -113,9 +115,9 @@ int main(int argc, char const *argv[]) {
 
 	// Thread and memory cleanup
 	serverCleanUp();
-	exit();
+	return 0;
 }
-void setupServer(int argc, char const *argv[], char * nPORT, )		//Sets up the new server, prepares to listen for connections
+void setupServer(int argc, char const *argv[], char * nPORT)		//Sets up the new server, prepares to listen for connections
 {
 	//Check for proper command line usage
 	if (argc < 2) {
@@ -295,15 +297,13 @@ void connectToDatabase(player * curClient)	// connects client to the database
 }
 
 // Creates a new thread for a new game manager by the given client
-void createGame(player * curClient)	
-{
+void createGame(player * curClient)	{
 	STARTUPINFO startupInfo;
-	PROCESS_INFORMATION processInfo;
-
+	_PROCESS_INFORMATION * processInfo;
 
 	// Create new game process
 	CreateProcess(GAME_MANAGER_APPLICATION
-		argv[1],        // Command line
+		NULL,			// Command line
 		NULL,           // Process handle not inheritable
 		NULL,           // Thread handle not inheritable
 		FALSE,          // Set handle inheritance to FALSE
@@ -311,16 +311,15 @@ void createGame(player * curClient)
 		NULL,           // Use parent's environment block
 		NULL,           // Use parent's starting directory 
 		&startupInfo,   // STARTUPINFO structure
-		&processInfo)   // PROCESS_INFORMATION structure
+		processInfo);   // PROCESS_INFORMATION structure
 
-	//starts new game thread with arguments [(1)int: number of players] [(2)string player 0 name] [(3)player 0 socket] [(4) int observer limit] [(5)int Game ID#] [(6)string Game Name]
+	// Wait for new process to be setup/idle (processHANDLE, MillisecondWait)
+	DWORD ready = WaitForInputIdle(processInfo->hProcess, 5000);
 
-	if(newGame.initiated())  {						//If initiation is successful:
-		ACTIVE_GAMES.add(&newGame);							// add to global active newGame list
-		newGame.run();										// start newGame
-	}
+	if (ready == 0)					// If the new process if ready to receive game info
+		ACTIVE_GAMES.addGame(processInfo, curClient);
 	else
-		writetolog("game initiation failure");			// Otherwise write failure to log file
+		writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
 }
 
 // Adds specified client to game
