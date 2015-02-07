@@ -2,6 +2,7 @@
 		
 		Stores list of active games
 
+		vs and github?
 
 */
 #ifndef HEADER_GAMELIST_H
