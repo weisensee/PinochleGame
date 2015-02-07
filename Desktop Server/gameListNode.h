@@ -6,12 +6,14 @@
 #ifndef HEADER_GAMELISTNODE_H
 #define HEADER_GAMELISTNODE_H
 
-#include <string.h>
+#include <string>
+#include <windows.h>
 
 class gameListNode
 {
 public:
-	gameListNode(unsigned short ngameID, char * ngameName, char * nplayerName, HANDLE * ngameHandle, char nstatus, unsigned char nplayers);
+	gameListNode();
+	gameListNode(int ngameID, std::string * ngameName, std::string * nplayerName, HANDLE * ngameHandle, char nstatus, int nplayers);
 	~gameListNode();
 	std::string getInfoString();				//returns game information as string
 	bool updateStatus(char newStatus);	//updates current game with new status
@@ -19,11 +21,11 @@ public:
 
 	gameListNode * next;
 	HANDLE gameHandle;				//thread handles for active games array
-	char * playerNames;				//first player/creating player name array
-	char * gameName;				//game name array
-	unsigned short * gameID;		//ID number for specific Pinochle Game
+	std::string ** playerNames;				//first player/creating player name array
+	std::string * gameName;				//game name array
+	int gameID;		//ID number for specific Pinochle Game
 	char status;					//current status of game
-	unsigned char players;			//number of players in game
+	int players;			//number of players in game
 };
 
 #endif

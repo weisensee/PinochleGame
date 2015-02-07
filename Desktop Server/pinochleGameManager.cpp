@@ -11,141 +11,146 @@
 		-quit and save game when finished
 */
 
-#include "gameRecord.h"
+#include <stdlib.h>
+#include <string>
+#include <winsock2.h>
+#include "pinochleRound.h"
+#include "player.h"
 
-void prepforstart(game, playerSockets, observerSockets);		//manages the waiting/setup process
-void addnewplayer(game, playerSockets);			//checks on and adds any new players
-void checkplayercommand(game, playerSockets);	//check with and execute player commands
-void manageGamePlay(game, playerSockets, observerSockets);
-void biddingPhase(game, playerSockets);			//manages entire bidding phase
-void meldingPhase(game, playerSockets);			//manages entire melding phase
-void tricksPhase(game, playerSockets);			//manages entire trick taking phase
-void publishReport(game, playerSockets);		//totals scores and publishes to player
-void diconnectPlayers(playerSockets);			//disconnect all network connections
-void shutdownGame(SOCKETS playerSockets, SOCKETS observerSockets, int players, int observers);	//manage shutdown of the game and connections
+// Maximum Observers and players, game's unique id, winning goal
+int MAXOBSERVERS, MAXPLAYERS, GAMEID, GOAL;
+int * SCORES;
+std::string * gameName;
+player ** PLAYERS;
+player ** OBSERVERS;
+bool gameOver;
 
 
-//starts new game thread with arguments [int: number of players] [char player 0 name] [player 0 socket] [observer limit]
+// Setup
+void constructGame(char const *argv[]);				// initialize game variables
+void prepforstart();		//manages the waiting/setup process
+int ready();				// Returns true if the game is ready
+void addnewplayer();		//checks on and adds any new players
+void checkplayercommand();	//check with and execute player commands
+
+// Gameplay
+void manageGamePlay();
+void biddingPhase();		//manages entire bidding phase
+void meldingPhase();		//manages entire melding phase
+void tricksPhase();			//manages entire trick taking phase
+void publishReport();		//totals scores and publishes to player
+void diconnectPlayers();	//disconnect all network connections
+void saveGame();
+void quit(int type);		// shutdown/save the game and close connections, if type == 0, dont save
+bool restart();
+
+//starts new game thread with arguments [(1)int: number of players] [(2)string player 0 name] [(3)player 0 socket] [(4) int observer limit] [(5)int Game ID#] [(6)string Game Name]
 int main(int argc, char const *argv[])
 {
 	//initialize WSA
 
 	//Initiate new game setup
+	constructGame(argv);
 
-	OBSERVER_LIMIT = argv[4];
-	SOCKET observerSockets[OBSERVER_LIMIT];				//create observer socket array
-	gameRecord * game = new game(argv[1], argv[2]);		//create new game
-	SOCKET observerSockets[OBSERVER_LIMIT];				//create observer socket array
-	SOCKET playerSockets[argv[1]];						//create player socket array
-	playerSockets[0] = argv[3];							//save player 0's socket
 
 	//Connect players/wait for start
 	//wait until the game is ready and players are ready to start
 	//game.ready() returns -1 if all players have left.
-	prepforstart(game, playerSockets, observerSockets);
+	prepforstart();
 
 	//play games until users want to quit
 	do {
 		//Manage play
-		manageGamePlay(game, playerSockets, observerSockets)
+		manageGamePlay();
 
 		//Save game to archives
-		game.save();
+		saveGame();
 
-	} while(!game.restart());	//Play another game if users want
+	} while(!restart());	//Play another game if users want
 
-	shutdownGame(playerSockets, observerSockets, argv[1], observers);
+	quit(1);
 
 	return 0;
 }
 
-void prepforstart(game, playerSockets, observerSockets)		//manages the waiting/setup process
+void prepforstart()		//manages the waiting/setup process
 {
-	while(game.ready() > 0) {						//while the game is not ready or empty
-		addnewplayer(game, playerSockets);			//check for new players to add to game
-		checkplayercommand(game, playerSockets);	//check for player requests
+	while(ready() > 0) {					//while the game is not ready or empty
+		addnewplayer();		//check for new players to add to game
+		checkplayercommand();	//check for player requests
 	}
 
-	if (game.ready() < 0)					//if all players have left
-	{
-		game.quit(0)						//quit without saving
-		delete game;						//deallocate memory
-		diconnectPlayers(playerSockets);	//disconnect all network connections
-		delete [] playerSockets;
-		return 0;							//exit process
+	if (ready() < 0)					//if all players have left
+		quit(0);						//quit without saving
+}
+
+//argv: [(1)int: number of players] [(2)string player 0 name] [(3)player 0 socket] [(4) int observer limit] [(5)int Game ID#] [(6)string Game Name]
+void constructGame(char const *argv[]) {
+
+	// Setup Player array
+	MAXPLAYERS = (int) *argv[1];
+	*PLAYERS = new player[MAXPLAYERS];
+	PLAYERS[0] = new player(argv[2], *argv[3]);	// add player 1 to playerlist
+
+	// Setup observer array
+	MAXOBSERVERS = *argv[4];
+	for (int i = 0; i < MAXOBSERVERS; ++i)
+		OBSERVERS[i] = NULL;
+
+	// Initiate other constants
+	GAMEID = *argv[5];
+	SCORES = new int[2];
+	gameOver = false;
+}
+
+void manageGamePlay() {
+	while(!gameOver) {
+		biddingPhase();
+		meldingPhase();
+		tricksPhase();
+		publishReport();
 	}
 }
 
+void biddingPhase()	{		//manages entire bidding phase
 
-void manageGamePlay(game, playerSockets, observerSockets)
-{
-	while(game.continue()) {
-		biddingPhase(game, playerSockets);
-		meldingPhase(game, playerSockets);
-		tricksPhase(game, playerSockets);
-		publishReport(game, playerSockets);
-	}
+
 }
 
-void manageGamePlay(game, playerSockets, observerSockets)
+void meldingPhase()			//manages entire melding phase
 {
 
 }
 
-void biddingPhase(game, playerSockets)			//manages entire bidding phase
+void tricksPhase()			//manages entire trick taking phase
 {
 
 }
 
-void meldingPhase(game, playerSockets)			//manages entire melding phase
-{
-
-}
-
-void tricksPhase(game, playerSockets)			//manages entire trick taking phase
-{
-
-}
-
-void publishReport(game, playerSockets)		//totals scores and publishes to player
+void publishReport()		//totals scores and publishes to player
 {
 
 }
 
 //manage shutdown of the game and connections
-void shutdownGame(SOCKETS playerSockets, SOCKETS observerSockets, int players, int observers)
+void quit()
 {
+
+
 	//Disconnect users
-	for (int i = 0; i < players; ++i)
-		disconnect(playerSockets[i]);
+	for (int i = 0; i < MAXPLAYERS; ++i)
+		PLAYERS[i]->closeConnection();
 
 	//disconnect any observers
-	if(observers) {
-		for (int i = 0; i < observers; ++i) 			//for each occupied observer spot
-			if (observerSockets[i])					//disconnect
-				disconnect(observerSockets[i]);
-	}
+	for (int i = 0; i < MAXOBSERVERS; ++i) 		//for each occupied observer spot
+		if (OBSERVERS[i])						//disconnect it if it exists
+			OBSERVERS[i]->closeConnection();
+
+
+	delete [] *PLAYERS;
+	delete [] *OBSERVERS;
 
 	WSACleanup();		//deallocates WSA data
 }
 
-
-void disconnect(SOCKET * current, n) 
-{
-	for (int i = 0; i < n; ++i)
-		disconnectSocket(current[n]);
-}
-
-int disconnect(SOCKET * current) 
-{
-	//disconnect client "current"
-	int result = shutdown(current, SD_SEND);
-	if (result == SOCKET_ERROR) {						//quit on shutdown error
-		printf("shutdown failed: %d\n", WSAGetLastError());
-		closesocket(current);
-		WSACleanup();
-		return 1;										//*************// SHOULD BE THROWING AN ERROR \\*********
-
-	closesocket(playerSockets[i])
-}
 

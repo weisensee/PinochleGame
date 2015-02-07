@@ -4,7 +4,8 @@ Packet and Client Communication Specifications for the Desktop Pinochle Server
 
 Packet Phase  Description: Detailed description
 				detailed component description
-C => from Client   S => from Server
+
+C => from Client   S => from Server:
 
 C1. 	Connection initiates.
 
@@ -27,9 +28,9 @@ S2	Server sends active game list
 					W: waiting
 					F: full
 				gameID: (int) ID number for specific game
-				gameName: Char Array
-				playerNames: Char Array
-
+				gameName: string
+				playerNames: string
+				
 C3.	Client sends choice about which game to play: (int) game ID
 		1^n^%s: create new game with n users and %s Gamename, '^': char delimiter between data values
 			1: unsigned short == 1

@@ -1,0 +1,18 @@
+Pinochle Game Server Objects
+by Lucas Weisensee
+
+OBJECT SPECIFICATIONS:
+
+Desktop Pinochle Server				Desktop Pinochle Server.txt		Manages connections and client/game list
+Desktop Pinochle Client				Desktop Pinochle Client.txt		Connects to and play pinochle with server
+log									log.h							oversees creating and writing to log file
+
+Game Manager						pinochleGameManager.cpp			Proctors an active game, manages players
+Pinochle Game 						pinochleGame.h					Stores active game info
+
+Game List 							gameList.cpp					Manages and stores list of active games
+Game List Node						gameListNode.h 					stores game items for active game list
+Pinochle Round						pinochleRound.h					Stores round info for an active game
+
+Game Archives						gameArchives.h					retrieves past game records for clients
+Pinochle Archive Round				pinochleArchRound.h				Stores complete round info for database

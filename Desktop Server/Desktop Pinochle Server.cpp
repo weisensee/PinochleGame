@@ -217,7 +217,7 @@ void sendGameList(SOCKET ClientSocket, char * answer)
 {
 	int result;					//send/receive result
 	char * currentGameList;		//string to pass to client
-	ACTIVE_GAMES.getCurrent(currentGameList);	//gets list of active games for client to connect to
+	ACTIVE_GAMES.getCurrent(&currentGameList);	//gets list of active games for client to connect to
 	result = send(ClientSocket, currentGameList, strlen(currentGameList), 0);		//send list
 	if(result > 0)								//if the sending was successful
 	{												//get answer

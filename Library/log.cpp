@@ -5,26 +5,6 @@
 */
 #include "log.h"
 
-// Sets LOG_FILE_NAME with date and PID info
-// MM/DD/YYYY HH:MM:SS:mSmS pid [int processID]
-void setLogFileName()
-{
-	//initiate connections #
-	connections = 0;
-
-	//construct logfile title line
-	std::string * name;
-	*name = "\nConnections: " + connections;
-	name = addTimeString(name);
-	*name += " pid " + GetCurrentProcessId();
-
-	//set logfile name and title line
-	LOG_FILE_NAME = new char[name->length()];
-	strcpy(LOG_FILE_NAME, name->c_str());
-	name->insert(0, "Log File Created: ");
-	writetolog(name);
-}
-
 void writetolog(std::string * treport)					//writes report to log file
 {
 	//generate report

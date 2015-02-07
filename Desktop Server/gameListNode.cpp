@@ -3,27 +3,34 @@
 	functions for game list node items
 
 */
+
+#include "gameListNode.h"
+
+
+// Default constructor
+gameListNode::gameListNode()
+{
+	gameID = 0;
+	// default construction code
+}
 	//Creates a game list node with the passed in attributes
-gameListNode(unsigned short ngameID, char * ngameName, char * nplayerName, HANDLE * ngameHandle, char nstatus, unsigned char nplayers)
+gameListNode::gameListNode(int ngameID, std::string *ngameName, std::string *nplayerName, HANDLE * ngameHandle, char nstatus, int nplayers)
 {
 	if(ngameID && ngameHandle && ngameName && nplayerName) {	//if the values were passed correctly
-		gameHandle = *ngameHandle;		//thread handles for active games array
+		gameHandle = *ngameHandle;		
+		//thread handles for active games array
 		status = nstatus;
 		gameID = ngameID;
 		players = 1;
 
 		//allocate array space
-		playerNames = new char*[nplayers]							//player name array
-		playerNames[0] = new char[strlen(nplayerName) + 1];			//first player/creating player name copy
-		gameName = new char[strlen(ngameName) + 1];					//game name array allocation
-
-		//copy info
-		strcpy(playerName[0], nplayerName);
-		strcpy(gameName, ngameName);
+		playerNames = new std::string*[nplayers];				//player name array
+		playerNames[0] = new std::string(*nplayerName);			//first player/creating player name copy
+		gameName = new std::string(*ngameName);					//game name array allocation
 	}
 }
 
-~gameListNode()		//deallocate reserved memory
+gameListNode::~gameListNode()		//deallocate reserved memory
 {
 	if(gameName)				//if memory was used
 		delete gameName;			//delete it
@@ -32,29 +39,25 @@ gameListNode(unsigned short ngameID, char * ngameName, char * nplayerName, HANDL
 		if(playerNames[i])
 			delete playerNames[i];	//delete it
 		else
-			i + 10;
+			i += 10;
 	}
 }
 
-std::string getInfoString()				//returns game information as string see "server packet specifications.txt"
-{
+std::string gameListNode::getInfoString()				// returns game information as string see "server packet specifications.txt"
+{														// X^gameID^gameName^gamecreator^playera^playerb^playern
 
-	std::string * temp = new std::string;
-	temp += status + "^" + gameID + "^" + gameName + "^" + gamecreator + "^" +  playerNames[0];
+	std::string * temp = new std::string(status + '^' + gameID + '^' + gameName->c_str() + '^' + *playerNames[0]->c_str());
 
 	//append other player names if available
 	if (players > 1)
 		for (int i = 1; i < players; ++i)
-			temp += "^" + playerNames[i];
-
-	//close game string
-	temp += "\\";
+			temp += '^' + *playerNames[i]->c_str();
 }
 
-bool updateStatus(char newStatus)	//updates current game with new status returns true if success
+bool gameListNode::updateStatus(char newStatus)	//updates current game with new status returns true if success
 {
-	if(newStatus)
-		status = newStatus
+	if (newStatus)
+		status = newStatus;
 	else
 		return false;
 	return true;
