@@ -71,16 +71,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="client communication code.cpp" />
-    <ClCompile Include="Desktop Pinochle Client.cpp" />
     <ClCompile Include="Desktop Pinochle Server.cpp" />
-    <ClCompile Include="example iocp server from microsoft.cpp" />
-    <ClCompile Include="example multithread.cpp" />
     <ClCompile Include="gameArchives.cpp" />
     <ClCompile Include="gameList.cpp" />
     <ClCompile Include="gameListNode.cpp" />
-    <ClCompile Include="gameRecord.cpp" />
-    <ClCompile Include="pinochleGameManager.cpp" />
     <ClCompile Include="pinochleRound.cpp" />
   </ItemGroup>
   <ItemGroup>

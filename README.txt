@@ -5,6 +5,9 @@ Pinochle Game Project
 OVERVIEW::
 The aim of this project is to create a functional Pinochle Game utilizing different forms of AI and machine learning that is playable on a variety of different systems.
 
+TECHNICAL INFORMATION::
+See "Documentation" directory for more detailed specifications about project
+
 COMPONENTS OF THIS PROJECT::
 -Game Database 	-- stores past games for machine learning access
 -Game Server 	-- hosts database and online playing environment

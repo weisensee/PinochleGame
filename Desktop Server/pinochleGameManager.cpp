@@ -4,13 +4,15 @@
 		November 2014
 
 	This program will function as a pinochle game manager. It will:
-		-manage connections to all current playersa and observers
+		-manage connections to all current players and observers
 		-keep track of the current game
 		-keep track of the current round
 		-enforce turn rules/turn order
 		-quit and save game when finished
 */
+#define WIN32_LEAN_AND_MEAN
 
+#pragma once
 #include <stdlib.h>
 #include <string>
 #include <winsock2.h>
@@ -41,7 +43,7 @@ void tricksPhase();			//manages entire trick taking phase
 void publishReport();		//totals scores and publishes to player
 void diconnectPlayers();	//disconnect all network connections
 void saveGame();
-void quit(int type);		// shutdown/save the game and close connections, if type == 0, dont save
+void quit(int type);		// shutdown/save the game and close connections, if type == 0, don't save
 bool restart();
 
 //starts new game thread with arguments [(1)int: number of players] [(2)string player 0 name] [(3)player 0 socket] [(4) int observer limit] [(5)int Game ID#] [(6)string Game Name]

@@ -2,7 +2,7 @@
 		
 		Functions for gameList.h : 
 			Manages and stores list of active games
-			Responds to querries about active games
+			Responds to queries about active games
 
 
 
@@ -39,18 +39,18 @@ gameList::~gameList()			//destructor
 		delete [] currentList;
 }
 
-int gameList::addGame(int ngameID, std::string *ngameName, std::string *nplayerName, HANDLE * ngameHandle, char nstatus, int nplayers)		//add game with specified components to list if it's not already there
+bool gameList::addGame(_PROCESS_INFORMATION * processInfo, player * curClient)		//add game with specified components to list if it's not already there
 {
 	// If the list is full: 
 	if (total >= max)	//return an error
 		return 0;
 
 	// Otherwise create and add node to list
-	gameListNode * temp = new gameListNode(ngameID, ngameName, nplayerName, ngameHandle, nstatus, nplayers);
+	gameListNode * temp = new gameListNode(processInfo, curClient);
 	return add(temp);
 }
 
-int gameList::add(gameListNode * ngame)							//add ngame to list of active games
+bool gameList::add(gameListNode * ngame)							//add ngame to list of active games
 {
 	// If the list is full: 
 	if (total >= max)	//return an error
@@ -70,7 +70,7 @@ int gameList::add(gameListNode * ngame)							//add ngame to list of active game
 	return true;
 }
 
-	bool gameList::getCurrent(std::string *sendList)		// copies formatted list of current active games to sendList, returns true if list existed
+std::string gameList::getCurrent()		// copies formatted list of current active games to sendList, returns true if list existed
 {
 	// Initiate pointers
 	std::string toSend; 
@@ -83,13 +83,12 @@ int gameList::add(gameListNode * ngame)							//add ngame to list of active game
 			current = current->next;					// move to next node
 		}
 		toSend += "*";			// append closing symbol
-		*sendList = toSend;		// save to buffer string
 	}
 
-	// If the list doesnt exist return 0
+	// If the list doesn't exist return 0
 	else 
 		return 0;
-	return true;			// returns sucess if list existed
+	return toSend.c_str();			// returns success if list existed
 }
 
 	int gameList::total_games()						//returns total active games in list
@@ -99,54 +98,52 @@ int gameList::add(gameListNode * ngame)							//add ngame to list of active game
 
 	bool gameList::remove(int gameID)	// remove matching game from list
 {
-	// Retreive the pointer to the node preceeding gameID
-	gameListNode found = find_preceeding(gameID);
+	// Retrieve the pointer to the node preceding gameID
+	gameListNode *found = find_preceeding(gameID);
 
 	// Check for errors
-	if (found == -1)		//if game not found
-		return found;
+	if ((int)found == -1)		//if game not found
+		return false;
 
 	// If the head of the list needs to be removed
 	if (found == 0) {
-		gameListNode temp = head->next;
+		gameListNode *temp = head->next;
 		delete head;
 		head = temp;
 	}
 
 	// If the node to remove is not the head 
 	else {
-			gameListNode nextNode = found->next.next;		//remove it
-			delete found->next;
-			found->next = nextNode;							//re-connect list
-		}
+		gameListNode *nextNode = found->next->next;		//remove it
+		delete found->next;
+		found->next = nextNode;							//re-connect list
+	}
 
 	//return success
 	return true;
 }
 
-	bool gameList::updateStatus(unsigned short gameID, char status)		//updates the list's current status for a specific game
+	bool gameList::updateStatus(int gameID, char status)		//updates the list's current status for a specific game
 {
-	return find_preceeding(gameID).updateStatus(status);		//find game and send update
+	return find_preceeding(gameID)->updateStatus(status);		//find game and send update
 }
 
-// Returns a pointer to the node preceeding gameID. 
-// returns -1 if failed, 0 if head, * to node otherwise
-gameListNode* gameList::find_preceeding(int gameID) {
+// Returns a pointer to the node preceding gameID, -1 if failed, 0 if head, * to node otherwise
+gameListNode* gameList::find_preceeding(int fGameID) {
 
-	//check head Node return 1 if match
-	if (*head.getID() == gameID) {
-		return 0;
+	//check head Node return 0 if match
+	if (head->getID() == fGameID)
+		return NULL;
 
 	//iterate over list
 	else {
-		gameListNode current = head;
-		while (current->next && *current->next.getID() != gameID)		//traverse to node before matching node
+		gameListNode * current = head;
+		while (current->next && current->next->getID() != fGameID)		//traverse to node before matching node
 			current = current->next;	
-		if (current->next) 							//if the node was found
+		if (current->next) 							// if the node was found
 			return current;							// return it
-
-		else if (current->next == NULL)						//if the node was not found
-			return -1;										//return error
+		else if (current->next == NULL)				// if the node was not found
+			return (gameListNode*)-1;				// return error
 	}
 
 }

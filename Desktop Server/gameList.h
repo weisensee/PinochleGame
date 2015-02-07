@@ -7,12 +7,16 @@
 		TO DO:
 			-Fix process killing
 				"Handles in PROCESS_INFORMATION must be closed with CloseHandle when they are no longer needed."
+			-interprocess communication with child game manager process:
+				-name change
+				-player 1 change/quit
+				-# of players changes 
 
 */
-#ifndef HEADER_GAMELIST_H
-#define HEADER_GAMELIST_H
-
+#define WIN32_LEAN_AND_MEAN
+#pragma once
 #include "gameListNode.h"
+#include "player.h"
 
 class gameList
 {	
@@ -20,11 +24,10 @@ public:
 	gameList(int MAX_LENGTH);	//constructs a game list of linked nodes with max length MAX_LENGTH
 	gameList();					//constructs a game list with MAX_LENGTH = 10 (see gameList.cpp)
 	~gameList();				//destructor
-	int addGame(char * gamename, char * playerName, HANDLE threadHandle);		//add game with specified components to list if it's not already there
-	bool addPlayer(int gameID, char * playerName, SOCKET clientSocket, int playerNum);	//add specified player to specified game
-	int add(gameListNode * ngame);							// add ngame to list of active games
-	int addGame(_PROCESS_INFORMATION * processInfo, player * curClient);					// add new process/game and client to list
-	bool getCurrent(std::string* sendList);	//copies formatted list of current active games to sendList, returns true if list existed
+	int addPlayer(int gameID, player * newPlayer);	//add specified player to specified game
+	bool add(gameListNode * ngame);							// add ngame to list of active games
+	bool addGame(_PROCESS_INFORMATION * processInfo, player * curClient);					// add new process/game and client to list
+	std::string getCurrent();	//copies formatted list of current active games to sendList, returns true if list existed
 	int total_games();					//returns total active games in list
 	bool updateStatus(int gameID, char status);		//updates the lists current status for a specific game
 
@@ -42,5 +45,3 @@ private:
 	std::string * currentList;					//current active list if recently generated
 
 };
-
-#endif

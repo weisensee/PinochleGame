@@ -1,78 +1,38 @@
-﻿Build started 2/6/2015 5:58:17 PM.
+﻿Build started 2/7/2015 1:53:57 AM.
      1>Project "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\PinochleServer.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt "Desktop Pinochle Server.cpp" "client communication code.cpp" "example iocp server from microsoft.cpp" gameList.cpp gameListNode.cpp gameRecord.cpp
-         gameRecord.cpp
-     1>c1xx : fatal error C1083: Cannot open source file: 'gameRecord.cpp': No such file or directory
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt "Desktop Pinochle Server.cpp" gameArchives.cpp gameList.cpp gameListNode.cpp pinochleRound.cpp
+         pinochleRound.cpp
          gameListNode.cpp
          gameList.cpp
-     1>gameList.cpp(101): error C2511: 'bool gameList::remove(int)' : overloaded member function not found in 'gameList'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameList.h(14) : see declaration of 'gameList'
-     1>gameList.cpp(103): error C2352: 'gameList::find_preceeding' : illegal call of non-static member function
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameList.h(27) : see declaration of 'gameList::find_preceeding'
-     1>gameList.cpp(106): error C2678: binary '==' : no operator found which takes a left-hand operand of type 'gameListNode' (or there is no acceptable conversion)
-                 C:\Program Files (x86)\Windows Kits\8.1\Include\shared\guiddef.h(192): could be 'bool operator ==(const GUID &,const GUID &)'
-                 while trying to match the argument list '(gameListNode, int)'
-     1>gameList.cpp(110): error C2678: binary '==' : no operator found which takes a left-hand operand of type 'gameListNode' (or there is no acceptable conversion)
-                 C:\Program Files (x86)\Windows Kits\8.1\Include\shared\guiddef.h(192): could be 'bool operator ==(const GUID &,const GUID &)'
-                 while trying to match the argument list '(gameListNode, int)'
-     1>gameList.cpp(111): error C2227: left of '->next' must point to class/struct/union/generic type
-     1>gameList.cpp(112): error C2541: 'delete' : cannot delete objects that are not pointers
-     1>gameList.cpp(113): error C2597: illegal reference to non-static member 'gameList::head'
-     1>gameList.cpp(118): error C2819: type 'gameListNode' does not have an overloaded member 'operator ->'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameListNode.h(13) : see declaration of 'gameListNode'
-                 did you intend to use '.' instead?
-     1>gameList.cpp(118): error C2232: '->gameListNode::next' : left operand has 'class' type, use '.'
-     1>gameList.cpp(118): error C2228: left of '.next' must have class/struct/union
-     1>gameList.cpp(119): error C2819: type 'gameListNode' does not have an overloaded member 'operator ->'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameListNode.h(13) : see declaration of 'gameListNode'
-                 did you intend to use '.' instead?
-     1>gameList.cpp(119): error C2232: '->gameListNode::next' : left operand has 'class' type, use '.'
-     1>gameList.cpp(120): error C2819: type 'gameListNode' does not have an overloaded member 'operator ->'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameListNode.h(13) : see declaration of 'gameListNode'
-                 did you intend to use '.' instead?
-     1>gameList.cpp(120): error C2232: '->gameListNode::next' : left operand has 'class' type, use '.'
-     1>gameList.cpp(128): error C2511: 'bool gameList::updateStatus(unsigned short,char)' : overloaded member function not found in 'gameList'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameList.h(14) : see declaration of 'gameList'
-     1>gameList.cpp(129): error C2352: 'gameList::find_preceeding' : illegal call of non-static member function
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameList.h(27) : see declaration of 'gameList::find_preceeding'
-     1>gameList.cpp(129): error C2228: left of '.updateStatus' must have class/struct/union
-     1>gameList.cpp(137): error C2228: left of '.getID' must have class/struct/union
-                 type is 'gameListNode *'
-                 did you intend to use '->' instead?
-     1>gameList.cpp(141): error C2181: illegal else without matching if
-     1>gameList.cpp(142): error C2440: 'initializing' : cannot convert from 'gameListNode *' to 'gameListNode'
-                 No constructor could take the source type, or constructor overload resolution was ambiguous
-     1>gameList.cpp(143): error C2819: type 'gameListNode' does not have an overloaded member 'operator ->'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameListNode.h(13) : see declaration of 'gameListNode'
-                 did you intend to use '.' instead?
-     1>gameList.cpp(143): error C2232: '->gameListNode::next' : left operand has 'class' type, use '.'
-                 c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gameListNode.h(13) : see declaration of 'gameListNode'
-     1>gameList.cpp(143): error C2228: left of '.getID' must have class/struct/union
-     1>gameList.cpp(143): fatal error C1903: unable to recover from previous error(s); stopping compilation
-         example iocp server from microsoft.cpp
-     1>example iocp server from microsoft.cpp(53): fatal error C1083: Cannot open include file: 'iocpserver.h': No such file or directory
-         client communication code.cpp
-     1>c1xx : fatal error C1083: Cannot open source file: 'client communication code.cpp': No such file or directory
+         gameArchives.cpp
          Desktop Pinochle Server.cpp
-     1>Desktop Pinochle Server.cpp(173): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>Desktop Pinochle Server.cpp(126): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\string.h(195) : see declaration of 'strncpy'
-     1>Desktop Pinochle Server.cpp(220): error C2664: 'bool gameList::getCurrent(std::string *)' : cannot convert argument 1 from 'char **' to 'std::string *'
-                 Types pointed to are unrelated; conversion requires reinterpret_cast, C-style cast or function-style cast
-     1>Desktop Pinochle Server.cpp(286): error C2065: 'game' : undeclared identifier
-     1>Desktop Pinochle Server.cpp(286): error C2146: syntax error : missing ';' before identifier 'newGame'
-     1>Desktop Pinochle Server.cpp(286): error C3861: 'newGame': identifier not found
-     1>Desktop Pinochle Server.cpp(288): error C2065: 'newGame' : undeclared identifier
-     1>Desktop Pinochle Server.cpp(288): error C2228: left of '.initiated' must have class/struct/union
-                 type is 'unknown-type'
-     1>Desktop Pinochle Server.cpp(289): error C2065: 'newGame' : undeclared identifier
-     1>Desktop Pinochle Server.cpp(290): error C2065: 'newGame' : undeclared identifier
-     1>Desktop Pinochle Server.cpp(290): error C2228: left of '.run' must have class/struct/union
-                 type is 'unknown-type'
          Generating Code...
-     1>c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gamelistnode.cpp(55): error C4716: 'gameListNode::getInfoString' : must return a value
+     1>c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gamelist.cpp(149): warning C4715: 'gameList::find_preceeding' : not all control paths return a value
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.lib" /MACHINE:X86 "Debug\Desktop Pinochle Server.obj"
+         Debug\gameArchives.obj
+         Debug\gameList.obj
+         Debug\gameListNode.obj
+         Debug\pinochleRound.obj
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl setLogFileName(void)" (?setLogFileName@@YAXXZ) referenced in function "void __cdecl setupServer(int,char const * * const,char *)" (?setupServer@@YAXHQAPBDPAD@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl writetolog(char *)" (?writetolog@@YAXPAD@Z) referenced in function "void __cdecl createGame(class player *)" (?createGame@@YAXPAVplayer@@@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl writetolog(char *,int)" (?writetolog@@YAXPADH@Z) referenced in function "unsigned int __cdecl setupListenSocket(char *)" (?setupListenSocket@@YAIPAD@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: __thiscall player::player(unsigned int)" (??0player@@QAE@I@Z) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: __thiscall player::~player(void)" (??1player@@QAE@XZ) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall player::send(char const *)" (?send@player@@QAEHPBD@Z) referenced in function "void __cdecl playGames(class player *)" (?playGames@@YAXPAVplayer@@@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall player::getConnectionType(void)" (?getConnectionType@player@@QAEHXZ) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall player::getGameChoice(void)" (?getGameChoice@player@@QAEHXZ) referenced in function "void __cdecl playGames(class player *)" (?playGames@@YAXPAVplayer@@@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: bool __thiscall player::setName(void)" (?setName@player@@QAE_NXZ) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: unsigned int __thiscall player::getSocket(void)" (?getSocket@player@@QAEIXZ) referenced in function "void __cdecl receiveError(class player *)" (?receiveError@@YAXPAVplayer@@@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall gameList::addPlayer(int,class player *)" (?addPlayer@gameList@@QAEHHPAVplayer@@@Z) referenced in function "void __cdecl joinGame(int,class player *)" (?joinGame@@YAXHPAVplayer@@@Z)
+     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl serverSetupPrep(int,char const * * const,char *)" (?serverSetupPrep@@YAXHQAPBDPAD@Z) referenced in function _main
+     1>MSVCRTD.lib(crtexew.obj) : error LNK2019: unresolved external symbol _WinMain@16 referenced in function ___tmainCRTStartup
+     1>C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.exe : fatal error LNK1120: 13 unresolved externals
      1>Done Building Project "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\PinochleServer.vcxproj" (Build target(s)) -- FAILED.
 
 Build FAILED.
 
-Time Elapsed 00:00:03.98
+Time Elapsed 00:00:03.59

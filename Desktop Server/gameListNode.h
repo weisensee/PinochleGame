@@ -2,12 +2,16 @@
 
 	stores game items for active game list
 
-*/
-#ifndef HEADER_GAMELISTNODE_H
-#define HEADER_GAMELISTNODE_H
+	TO DO::
+		-Implement iterative/distinct game ID in "getGameId()"
 
+*/
+#define WIN32_LEAN_AND_MEAN
+#pragma once
 #include <string>
 #include <windows.h>
+#include "player.h"
+
 
 class gameListNode
 {
@@ -19,14 +23,18 @@ public:
 	std::string getInfoString();				//returns game information as string
 	bool updateStatus(char newStatus);	//updates current game with new status
 	bool addPlayer(char * name);
+	int getID();				// Returns game's ID
 
+	// DATA:
 	gameListNode * next;
-	_PROCESS_INFORMATION process;	//thread handles for active games array
-	std::string ** playerNames;		//first player/creating player name array
-	std::string * gameName;			//game name array
-	int gameID;						//ID number for specific Pinochle Game
-	char status;					//current status of game
-	int players;				//number of players in game
-};
 
-#endif
+private:
+	int gameListNode::getGameID();	// returns new game ID for current game
+	_PROCESS_INFORMATION process;	// thread handles for active games array
+	std::string **playerNames;		// first player/creating player name array
+	std::string gameName;			// game name array
+	int gameID;						// ID number for specific Pinochle Game
+	char status;					// current status of game
+	int players;					// number of players in game
+	int max_players = 6;			// max possible players
+};

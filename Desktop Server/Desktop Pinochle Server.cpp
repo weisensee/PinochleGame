@@ -22,6 +22,7 @@ This program will function as a desktop game server for a network based pinochle
 			-implement mutex lock on active game list
 		-error check/parse user answer for different answers/menu navigation than expected
 		-keep track of threads created and make sure they're all cleaned up
+		-To avoid resource leaks in a larger application, close handles explicitly. 
 
 */
 
@@ -30,6 +31,7 @@ This program will function as a desktop game server for a network based pinochle
 
 // ********************WINDOWS LIBRARIES::
 //#include "stdafx.h"
+#pragma once
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
@@ -47,31 +49,26 @@ This program will function as a desktop game server for a network based pinochle
 
 #define DEFAULT_BUFLEN 512
 #define GAME_MANAGER_APPLICATION "pinochleGameManager.exe"			// The individual game manager executable
+SECURITY_ATTRIBUTES secAttr;
 int MAX_THREADS = 20;
 int MAX_GAMES = 10;
 
 gameList ACTIVE_GAMES(MAX_GAMES);		// List of general info on all active games
 int connections;						// number of connections accepted
-int gameCounter;						// number of active games
 
 void serverSetupPrep(int argc, char const *argv[], char * nPORT);		//Sets up the new server, checks inputs
 SOCKET setupListenSocket(char * nPORT);				// Setup Listen socket for accepting new connections
-DWORD WINAPI handleNewClient(LPVOID* newSocket);
-void sendGameList(player * curClient, char * answer);			//sends active game list to client
-void interpretClientGameChoice(char * cResponse1, SOCKET ClientSocket, char * gameChoice);	//interprets client's commands/choice
-void receiveError(SOCKET ClientSocket);							//handles a receive error, prints to log
-void connectToDatabase(player * curClient);						// connects client to the database
-void createGame(SOCKET ClientSocket, char * gamename, char * playerName, unsigned char maxplayers);	//initiates the creation of a new game
-void joinGame(int gameNumber, char * playerName, SOCKET ClientSocket, unsigned char playernum);	//sends the client to the game specified
-void setLogFileName();											//sets log file name with time, date and PID info
-void serverCleanUp();					 // Cleans up allocated memory, threads and Socket overhead
+DWORD WINAPI handleNewClient(LPVOID* newSocket);// Handles a new client when connection is formed
+void playGames(player * curClient);				//sends active game list to client
+void receiveError(SOCKET ClientSocket);			//handles a receive error, prints to log
+void connectToDatabase(player * curClient);		// connects client to the database
+void createGame(player * curClient);			//initiates the creation of a new game
+void joinGame(int choice, player * curClient);	//sends the client to the game specified
+void setLogFileName();							//sets log file name with time, date and PID info
+void serverCleanUp();							// Cleans up allocated memory, threads and Socket overhead
 
-
-bool checkPlayPinochle(char * cResponse1);				// Check player's response1:: returns true if player name string included
 
 int main(int argc, char const *argv[]) {
-
-	int result;				// setup result variable, used for error checking
 	char nPORT[6];			// The port number to be used for listening
 	serverSetupPrep(argc, argv, nPORT);	// Check inputs and initiate sever settings 
 
@@ -131,15 +128,16 @@ void setupServer(int argc, char const *argv[], char * nPORT)		//Sets up the new 
 
 	// Initiate global variables
 	setLogFileName();
-	gameCounter = 0;
 
 	printf("\nSetting up connection\n");
 
-
+	// Set pipes to inherited so server can communicate with child processes
+	secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	secAttr.bInheritHandle = TRUE;
+	secAttr.lpSecurityDescriptor = NULL;
 
 
 }
-
 SOCKET setupListenSocket(char * nPORT) {
 	SOCKET ListenSocket;
 
@@ -207,17 +205,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	return ListenSocket;
 }
 
-
-	// Handles an individual Client::
-/* 
-	Parses and Executes Client's commands
-		0: initiates database access mode
-		1: sends the list of active games
-		2: receives user command:
-			0n%s: create new game with n users and %s name
-			xn:  join game x as n user
-*/
-DWORD WINAPI handleNewClient(LPVOID* newSocket) {
+DWORD WINAPI handleNewClient(LPVOID* newSocket) {	// Handles an individual Client::
 	//initiate variables
 	player curClient((SOCKET)newSocket);	// Create new player object
 	curClient.setName();
@@ -234,52 +222,19 @@ DWORD WINAPI handleNewClient(LPVOID* newSocket) {
 	WSACleanup();				//deallocates data after execution's complete
 	return 1;					//close program
 }
-
 void playGames(player * curClient)		// Queries and sends client to desired game-path
 {
 	// Send list of current games to client
-	std::string * currentGameList;		//string to pass to client
-	ACTIVE_GAMES.getCurrent(currentGameList);	//gets list of active games for client to connect to
-	curClient->send(currentGameList->c_str());		// Send to current list client
+	std::string currentGameList = ACTIVE_GAMES.getCurrent();	//gets list of active games for client to connect to
+	curClient->send(currentGameList.c_str());		// Send to current list client
 
 	// Parse user game choice: start new game or join an existing one
 	int choice = curClient->getGameChoice();	// Get game choice from player
 	if (choice == 0)							// if player chose to setup a new game
-		setupNewGame(&curClient);					// set it up
+		createGame(curClient);					// set it up
 	else if (choice > 0)						// If player chose to connect to an existing game
-		interpretClientGameChoice();				// connect to it
+		joinGame(choice, curClient);				// connect to it
 
-}
-
-void interpretClientGameChoice()	//interprets client's commands/choice
-{
-	//parse answer from client (cResponse2)::
-	unsigned short gameChoice = (unsigned short)strtoul(cResponse2, NULL, 0);
-
-	// Handle pinochle gaming request:
-	if (checkPlayPinochle(cResponse1)) {			//if client chose to play pinochle and formatted packet correctly
-		// execute game request
-		if (gameChoice == 0)					//if the player requested a new game
-			//create the new game: socket, playername, gamename, maxplayers:
-			createGame(ClientSocket, &cResponse1[1], &cResponse2[4], (unsigned char)cResponse1[2]);
-		else if (gameChoice > 1)								//otherwise join the game requested
-			// join game: gameID, playerName, PlayerSocket, PlayNumber:
-			joinGame(gameChoice, &cResponse1[1], ClientSocket, cResponse2[3]);
-		else if (gameChoice < 0)								//write to log if errors result
-			writetolog("join game response failure: ", WSAGetLastError());
-	}
-}
-
-// Check player's response1:: returns true if player name string included
-bool checkPlayPinochle(char * cResponse1)
-{
-	// If the client wants to play and sent the packet in correct format
-	if(cResponse1[0] == 1 && '^' == cResponse1[1])		//if they chose to play
-		if (cResponse1[2] >0)						//and included a player name
-			return 1;
-		else 
-			writetolog("error with appended playerName in cResponse1: ", cResponse1[2]);
-	return 0;
 }
 
 void receiveError(player * curClient)		//handles a receive error, prints to log
@@ -296,14 +251,36 @@ void connectToDatabase(player * curClient)	// connects client to the database
 	curClient->send(buffer.c_str());
 }
 
-// Creates a new thread for a new game manager by the given client
-void createGame(player * curClient)	{
+void createGame(player * curClient)	{		// Creates a new thread for a new game manager by the given client
+	// Initiate variables
 	STARTUPINFO startupInfo;
+	HANDLE child_IN_Rd = NULL;
+	HANDLE child_IN_Wr = NULL;
+	HANDLE child_OUT_Rd = NULL;
+	HANDLE child_OUT_Wr = NULL;
 	_PROCESS_INFORMATION * processInfo;
+	ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION));	// Ensure process data-structure memory is zeroed
+
+
+	// Create a pipe for the child process's STD OUT
+	if (!CreatePipe(&child_OUT_Rd, &child_OUT_Wr, &secAttr, 0))
+		writetolog("StdoutRd CreatePipe");
+
+	// Ensure the read handle to the pipe for STDOUT is not inherited
+	if (!SetHandleInformation(child_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
+		writetolog("Stdout SetHandleInformation");
+
+	// Create a pipe for the child process's STDIN.
+	if (!CreatePipe(&child_IN_Rd, &child_IN_Wr, &secAttr, 0))
+		writetolog("Stdin CreatePipe");
+
+	// Ensure the write handle to the pipe for STDIN is not inherited
+	if (!SetHandleInformation(child_IN_Wr, HANDLE_FLAG_INHERIT, 0))
+		writetolog("Stdin SetHandleInformation");
 
 	// Create new game process
-	CreateProcess(GAME_MANAGER_APPLICATION
-		NULL,			// Command line
+	CreateProcess(GAME_MANAGER_APPLICATION,
+		0,			// Command line
 		NULL,           // Process handle not inheritable
 		NULL,           // Thread handle not inheritable
 		FALSE,          // Set handle inheritance to FALSE
@@ -317,26 +294,24 @@ void createGame(player * curClient)	{
 	DWORD ready = WaitForInputIdle(processInfo->hProcess, 5000);
 
 	if (ready == 0)					// If the new process if ready to receive game info
-		ACTIVE_GAMES.addGame(processInfo, curClient);
+		if (!ACTIVE_GAMES.addGame(processInfo, curClient))
+			writetolog("game list full");
 	else
 		writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
 }
 
 // Adds specified client to game
-void joinGame(int gameNumber, char * playerName, SOCKET ClientSocket, unsigned char playernum)				// sends the client to the game specified
+void joinGame(int choice, player * curClient)				// sends the client to the game specified
 {
-	int result = ACTIVE_GAMES.addPlayer(gameNumber, playerName, ClientSocket, playernum);		// adds player to game, returns result
-	if(result)
-		exit(EXIT_SUCCESS);
-	else {
-		writetolog("ACTIVE_GAMES.addPlayer() failure: ", result);
-		exit(EXIT_SUCCESS);
-	}
+	int successful = ACTIVE_GAMES.addPlayer(choice, curClient);		// adds player to game, returns result
+	if(!successful)
+		writetolog("ACTIVE_GAMES.addPlayer() failure: ", successful);	// write to log if add player failed
+	exit(EXIT_SUCCESS);
 }
 
 void serverCleanUp() { // Cleans up allocated memory, threads and Socket overhead
 	
-	writetolog("Exiting server")
+	writetolog("Exiting server");
 
 	// Do other stuff
 }

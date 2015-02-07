@@ -58,6 +58,11 @@ int player::getConnectionType() {		// Returns what type of connection the client
 
 }
 
+int getGameChoice()	{		// Returns which game the player wants to join or 0 if they wish to start a new one
+
+}
+
+
 char * player::getStrAnswer() {			// Gets string answer from client
 	// Get result from player, store in buffer
 	int result = recv(ClientSocket, buffer, DEFAULT_BUFLEN, 0);	
@@ -70,9 +75,19 @@ char * player::getStrAnswer() {			// Gets string answer from client
 }
 int player::getIntAnswer();				// Gets integer answer from client
 
-void player::setName(string nName) { // Sets player's name to argument passed in
+bool player::setName(string nName) { // Sets player's name to argument passed in, returns true if successful
 	name = nName;
+	return name.length() > 0;
 }
+
+bool setName() {				// queries user for name then sets their new name, returns true if successful
+	// get new name from player
+	std::string temp = getStrAnswer(3);		// request player name
+
+	// update name
+	return setName(temp);
+}
+
 
 string player::getName() { 	// Returns the player's name
 	return name;
