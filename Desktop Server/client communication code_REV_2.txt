@@ -1,0 +1,88 @@
+Lucas Weisensee		Pinochle Game Server
+Packet and Client Communication Specifications for the Desktop Pinochle Server
+
+	Outlines and details the order and data types send/received with pinochle playing clients
+
+	Each type of query/response has a message code that corresponds to the exact type of message it is
+
+	the code is an UNSIGNED CHAR at the head of each packet
+		ODD codes correspond to server messages
+		EVEN codes correspond to client messages
+
+***************************************************************************************
+MESSAGE TITLE:
+***************************************************************************************
+CODE ::	DESCRIPTION
+0	 :: Error/Message to client
+1	 :: Server Status
+2	 :: Client Connection Type
+3	 :: Request Player Name
+4	 :: Player Name
+5	 ::	Active Game List
+6	 :: Game Choice (connect to)
+7	 :: Game Connection Status
+8	 :: Become Player
+9	 :: Become Observer
+10	 :: Create Game
+
+
+***************************************************************************************
+MESSAGE DESCRIPTION:
+***************************************************************************************
+CODE ::	DESCRIPTION
+0	 :: Error/Message to client
+		Simple error message/notification to print out to client or user
+1	 :: Server Acknowledges Connection and Readiness to Continue: [ServerStatus]
+		ServerStatus: (short)n
+			0: server not ready
+			1: server ready
+
+2	 :: Client Connection Type - Client sends char array "Response1":
+		Response1[0]:
+			0: initiates database access mode
+			1: request the list of active games
+
+3	 :: Request Player Name
+
+4	 :: Player Name
+		(string) player name
+
+5	 ::	Active Game List
+		1: Char array of games separated by "/": game1/game2/game3/*
+			game: X^gameID^gameName^gamecreator^playera^playerb^playern
+				X:status
+					P: playing
+					W: waiting
+					F: full
+				gameID: (int) ID number for specific game
+				gameName: string
+				playerNames: string
+			
+6	 :: Game Choice (connect to) - Client sends choice about which game to play: (int) game ID
+		(int) x ['^'] (int) n ['^']
+		x^n:  join game x as n user
+		x == 0: create new game
+			n = game name
+
+7	 :: Game Connection Status
+		(int) a ['^'] (int) b ['^']
+		a: connection status code
+			0: connection failed
+			1: connection successful
+
+		b: player/observer number
+			n: player/observer number
+
+8	 :: Become player
+		(int) a ['^']
+		a: desired player number
+
+9	 :: Become Observer 
+		(char) ['^']
+
+10	 :: Create Game
+		(int) n ['^'] %s ['^']: create new game with n users and %s Gamename, '^': char delimiter between data values
+			^: char == '^'
+			n: unsigned char
+			%s: New Game Name: '\0' delimited string 
+

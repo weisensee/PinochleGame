@@ -10,20 +10,21 @@
 #pragma once
 #include <string>
 #include <windows.h>
-#include "player.h"
+#include "client.h"
 
 
 class gameListNode
 {
 public:
 	gameListNode();
-	gameListNode(_PROCESS_INFORMATION * processInfo, player * curClient);
-	gameListNode(int ngameID, std::string * ngameName, std::string * nplayerName, HANDLE * ngameHandle, char nstatus, int nplayers);
+	gameListNode(_PROCESS_INFORMATION * processInfo, client * curClient);
 	~gameListNode();
 	std::string getInfoString();				//returns game information as string
-	bool updateStatus(char newStatus);	//updates current game with new status
-	bool addPlayer(char * name);
+	bool updateStatus(char newStatus);	// updates current game with new status
+	bool addPlayer(char * name);		// adds player to current node
+	bool addPlayer(std::string * name);	// adds player to current node
 	int getID();				// Returns game's ID
+	int playerCount();			// returns player count
 
 	// DATA:
 	gameListNode * next;

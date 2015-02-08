@@ -8,9 +8,9 @@ executableName PortNumber
 
 This program will function as a desktop game server for a network based pinochle game. It will:
 -Listen for new connections.
--Manage incoming player connections.
+-Manage incoming client connections.
 -Spin off processes to handle new games.
--Allow new players to connect to games in progress.
+-Allow new clients to connect to games in progress.
 -Keep track of games in progress.
 -Allow games to be added to the database
 -Allow games to be requested from the database.
@@ -43,28 +43,28 @@ This program will function as a desktop game server for a network based pinochle
 #pragma comment (lib, "Ws2_32.lib")	//Winsock server needs to be linked with libraries
 
 // *******************PRIVATE LIBRARIES::
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\log.h"		//Log writing library
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		//Log writing library
 #include "gameList.h"
-#include "player.h"
+#include "client.h"
 
 #define DEFAULT_BUFLEN 512
 #define GAME_MANAGER_APPLICATION "pinochleGameManager.exe"			// The individual game manager executable
+
+LogFile LogF;
 SECURITY_ATTRIBUTES secAttr;
 int MAX_THREADS = 20;
 int MAX_GAMES = 10;
-
 gameList ACTIVE_GAMES(MAX_GAMES);		// List of general info on all active games
 int connections;						// number of connections accepted
 
 void serverSetupPrep(int argc, char const *argv[], char * nPORT);		//Sets up the new server, checks inputs
 SOCKET setupListenSocket(char * nPORT);				// Setup Listen socket for accepting new connections
 DWORD WINAPI handleNewClient(LPVOID* newSocket);// Handles a new client when connection is formed
-void playGames(player * curClient);				//sends active game list to client
+void playGames(client * curClient);				//sends active game list to client
 void receiveError(SOCKET ClientSocket);			//handles a receive error, prints to log
-void connectToDatabase(player * curClient);		// connects client to the database
-void createGame(player * curClient);			//initiates the creation of a new game
-void joinGame(int choice, player * curClient);	//sends the client to the game specified
-void setLogFileName();							//sets log file name with time, date and PID info
+void connectToDatabase(client * curClient);		// connects client to the database
+void createGame(client * curClient);			//initiates the creation of a new game
+void joinGame(int choice, client * curClient);	//sends the client to the game specified
 void serverCleanUp();							// Cleans up allocated memory, threads and Socket overhead
 
 
@@ -91,7 +91,7 @@ int main(int argc, char const *argv[]) {
 		//Accept the client's socket
 		*ClientSocket = accept(ListenSocket, NULL, NULL);
 		if (*ClientSocket == INVALID_SOCKET) {
-			writetolog("accept failed: %d\n", WSAGetLastError());
+			LogF.writetolog("accept failed: %d\n", WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
 			return 1;
@@ -126,8 +126,8 @@ void setupServer(int argc, char const *argv[], char * nPORT)		//Sets up the new 
 	strncpy(nPORT, argv[1], strlen(argv[1]));
 	nPORT[strlen(argv[1])] = '\0';
 
-	// Initiate global variables
-	setLogFileName();
+	// Initiate server type log file in location specified`
+	LogF.setLogFileName("server log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\server");
 
 	printf("\nSetting up connection\n");
 
@@ -148,7 +148,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	// Initiate Windows Socket
 	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0){
-		writetolog("WSAStartup failed! Returned:%d\n", result);
+		LogF.writetolog("WSAStartup failed! Returned:%d\n", result);
 		return INVALID_SOCKET;
 	}
 
@@ -165,7 +165,7 @@ SOCKET setupListenSocket(char * nPORT) {
 
 	result = getaddrinfo(NULL, nPORT, &hints, &socketInfo);
 	if (result != 0){
-		writetolog("getaddrinfo failed with error: %d\n", result);
+		LogF.writetolog("getaddrinfo failed with error: %d\n", result);
 		WSACleanup();	//deallocate memory and quit
 		return  INVALID_SOCKET;;
 	}
@@ -174,7 +174,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	ListenSocket = socket(socketInfo->ai_family, socketInfo->ai_socktype, socketInfo->ai_protocol);
 
 	if (ListenSocket == INVALID_SOCKET) {
-		writetolog("Error at socket(): %ld\n", WSAGetLastError());
+		LogF.writetolog("Error at socket(): %ld\n", WSAGetLastError());
 		freeaddrinfo(socketInfo);
 		WSACleanup();
 		return  INVALID_SOCKET;;
@@ -183,7 +183,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	//Setup the TCP listening socket
 	result = bind(ListenSocket, socketInfo->ai_addr, (int)socketInfo->ai_addrlen);
 	if (result == SOCKET_ERROR) {
-		writetolog("bind failed with error: %d\n", WSAGetLastError());
+		LogF.writetolog("bind failed with error: %d\n", WSAGetLastError());
 		freeaddrinfo(socketInfo);
 		closesocket(ListenSocket);
 		WSACleanup();
@@ -196,7 +196,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	//listen for client connection on socket created
 	//SOMAXCONN allows for max reasonable connections as determined by the system
 	if (listen(ListenSocket, SOMAXCONN) == SOCKET_ERROR){				//if listen fails
-		writetolog("Listen() failed with error: %ld\n", WSAGetLastError());	//print error
+		LogF.writetolog("Listen() failed with error: %ld\n", WSAGetLastError());	//print error
 		closesocket(ListenSocket);										//and close program
 		WSACleanup();
 		return  INVALID_SOCKET;;
@@ -207,7 +207,7 @@ SOCKET setupListenSocket(char * nPORT) {
 
 DWORD WINAPI handleNewClient(LPVOID* newSocket) {	// Handles an individual Client::
 	//initiate variables
-	player curClient((SOCKET)newSocket);	// Create new player object
+	client curClient((SOCKET)newSocket);	// Create new client object
 	curClient.setName();
 
 	//Direct the client to the correct path and close the connection when finished
@@ -222,36 +222,36 @@ DWORD WINAPI handleNewClient(LPVOID* newSocket) {	// Handles an individual Clien
 	WSACleanup();				//deallocates data after execution's complete
 	return 1;					//close program
 }
-void playGames(player * curClient)		// Queries and sends client to desired game-path
+void playGames(client * curClient)		// Queries and sends client to desired game-path
 {
 	// Send list of current games to client
 	std::string currentGameList = ACTIVE_GAMES.getCurrent();	//gets list of active games for client to connect to
-	curClient->send(currentGameList.c_str());		// Send to current list client
+	curClient->sendM(5, &currentGameList);		// Send to current list client
 
 	// Parse user game choice: start new game or join an existing one
-	int choice = curClient->getGameChoice();	// Get game choice from player
-	if (choice == 0)							// if player chose to setup a new game
+	int choice = curClient->getIntAnswer();	// Get game choice from client
+	if (choice == 0)							// if client chose to setup a new game
 		createGame(curClient);					// set it up
-	else if (choice > 0)						// If player chose to connect to an existing game
+	else if (choice > 0)						// If client chose to connect to an existing game
 		joinGame(choice, curClient);				// connect to it
 
 }
 
-void receiveError(player * curClient)		//handles a receive error, prints to log
+void receiveError(client * curClient)		//handles a receive error, prints to log
 {
-		writetolog("receive failed: ", WSAGetLastError());
+		LogF.writetolog("receive failed: ", WSAGetLastError());
 		closesocket(curClient->getSocket());
 		WSACleanup();
 }
 
-void connectToDatabase(player * curClient)	// connects client to the database
+void connectToDatabase(client * curClient)	// connects client to the database
 {
 	std::string buffer;
 	buffer += "Hi, game database coming soon...";
-	curClient->send(buffer.c_str());
+	curClient->sendM(0, buffer.c_str());			// send descriptive error message to client
 }
 
-void createGame(player * curClient)	{		// Creates a new thread for a new game manager by the given client
+void createGame(client * curClient)	{		// Creates a new thread for a new game manager by the given client
 	// Initiate variables
 	STARTUPINFO startupInfo;
 	HANDLE child_IN_Rd = NULL;
@@ -264,19 +264,19 @@ void createGame(player * curClient)	{		// Creates a new thread for a new game ma
 
 	// Create a pipe for the child process's STD OUT
 	if (!CreatePipe(&child_OUT_Rd, &child_OUT_Wr, &secAttr, 0))
-		writetolog("StdoutRd CreatePipe");
+		LogF.writetolog("StdoutRd CreatePipe");
 
 	// Ensure the read handle to the pipe for STDOUT is not inherited
 	if (!SetHandleInformation(child_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-		writetolog("Stdout SetHandleInformation");
+		LogF.writetolog("Stdout SetHandleInformation");
 
 	// Create a pipe for the child process's STDIN.
 	if (!CreatePipe(&child_IN_Rd, &child_IN_Wr, &secAttr, 0))
-		writetolog("Stdin CreatePipe");
+		LogF.writetolog("Stdin CreatePipe");
 
 	// Ensure the write handle to the pipe for STDIN is not inherited
 	if (!SetHandleInformation(child_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-		writetolog("Stdin SetHandleInformation");
+		LogF.writetolog("Stdin SetHandleInformation");
 
 	// Create new game process
 	CreateProcess(GAME_MANAGER_APPLICATION,
@@ -295,23 +295,23 @@ void createGame(player * curClient)	{		// Creates a new thread for a new game ma
 
 	if (ready == 0)					// If the new process if ready to receive game info
 		if (!ACTIVE_GAMES.addGame(processInfo, curClient))
-			writetolog("game list full");
+			LogF.writetolog("game list full");
 	else
-		writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
+		LogF.writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
 }
 
 // Adds specified client to game
-void joinGame(int choice, player * curClient)				// sends the client to the game specified
+void joinGame(int choice, client * curClient)				// sends the client to the game specified
 {
-	int successful = ACTIVE_GAMES.addPlayer(choice, curClient);		// adds player to game, returns result
+	int successful = ACTIVE_GAMES.addclient(choice, curClient);		// adds client to game, returns result
 	if(!successful)
-		writetolog("ACTIVE_GAMES.addPlayer() failure: ", successful);	// write to log if add player failed
+		LogF.writetolog("ACTIVE_GAMES.addclient() failure: ", successful);	// write to log if add client failed
 	exit(EXIT_SUCCESS);
 }
 
 void serverCleanUp() { // Cleans up allocated memory, threads and Socket overhead
 	
-	writetolog("Exiting server");
+	LogF.writetolog("Exiting server");
 
 	// Do other stuff
 }

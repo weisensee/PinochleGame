@@ -1,38 +1,25 @@
-﻿Build started 2/7/2015 1:53:57 AM.
+﻿Build started 2/7/2015 5:58:39 PM.
      1>Project "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\PinochleServer.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt "Desktop Pinochle Server.cpp" gameArchives.cpp gameList.cpp gameListNode.cpp pinochleRound.cpp
-         pinochleRound.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt "Desktop Pinochle Server.cpp" gameList.cpp gameListNode.cpp
          gameListNode.cpp
          gameList.cpp
-         gameArchives.cpp
-         Desktop Pinochle Server.cpp
-     1>Desktop Pinochle Server.cpp(126): warning C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include\string.h(195) : see declaration of 'strncpy'
          Generating Code...
-     1>c:\users\pookey\onedrive\projects\pinochlegame\desktop server\gamelist.cpp(149): warning C4715: 'gameList::find_preceeding' : not all control paths return a value
+         Skipping... (no relevant changes detected)
+         Desktop Pinochle Server.cpp
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.lib" /MACHINE:X86 "Debug\Desktop Pinochle Server.obj"
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.lib" /MACHINE:X86 Debug\LogFile.obj
+         "Debug\Desktop Pinochle Server.obj"
          Debug\gameArchives.obj
+         Debug\client.obj
          Debug\gameList.obj
          Debug\gameListNode.obj
          Debug\pinochleRound.obj
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl setLogFileName(void)" (?setLogFileName@@YAXXZ) referenced in function "void __cdecl setupServer(int,char const * * const,char *)" (?setupServer@@YAXHQAPBDPAD@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl writetolog(char *)" (?writetolog@@YAXPAD@Z) referenced in function "void __cdecl createGame(class player *)" (?createGame@@YAXPAVplayer@@@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl writetolog(char *,int)" (?writetolog@@YAXPADH@Z) referenced in function "unsigned int __cdecl setupListenSocket(char *)" (?setupListenSocket@@YAIPAD@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: __thiscall player::player(unsigned int)" (??0player@@QAE@I@Z) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: __thiscall player::~player(void)" (??1player@@QAE@XZ) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall player::send(char const *)" (?send@player@@QAEHPBD@Z) referenced in function "void __cdecl playGames(class player *)" (?playGames@@YAXPAVplayer@@@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall player::getConnectionType(void)" (?getConnectionType@player@@QAEHXZ) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall player::getGameChoice(void)" (?getGameChoice@player@@QAEHXZ) referenced in function "void __cdecl playGames(class player *)" (?playGames@@YAXPAVplayer@@@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: bool __thiscall player::setName(void)" (?setName@player@@QAE_NXZ) referenced in function "unsigned long __stdcall handleNewClient(void * *)" (?handleNewClient@@YGKPAPAX@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: unsigned int __thiscall player::getSocket(void)" (?getSocket@player@@QAEIXZ) referenced in function "void __cdecl receiveError(class player *)" (?receiveError@@YAXPAVplayer@@@Z)
-     1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "public: int __thiscall gameList::addPlayer(int,class player *)" (?addPlayer@gameList@@QAEHHPAVplayer@@@Z) referenced in function "void __cdecl joinGame(int,class player *)" (?joinGame@@YAXHPAVplayer@@@Z)
      1>Desktop Pinochle Server.obj : error LNK2019: unresolved external symbol "void __cdecl serverSetupPrep(int,char const * * const,char *)" (?serverSetupPrep@@YAXHQAPBDPAD@Z) referenced in function _main
      1>MSVCRTD.lib(crtexew.obj) : error LNK2019: unresolved external symbol _WinMain@16 referenced in function ___tmainCRTStartup
-     1>C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.exe : fatal error LNK1120: 13 unresolved externals
+     1>C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\Debug\PinochleServer.exe : fatal error LNK1120: 2 unresolved externals
      1>Done Building Project "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\PinochleServer.vcxproj" (Build target(s)) -- FAILED.
 
 Build FAILED.
 
-Time Elapsed 00:00:03.59
+Time Elapsed 00:00:03.30

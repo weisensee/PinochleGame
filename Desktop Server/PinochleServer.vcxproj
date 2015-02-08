@@ -71,8 +71,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Library\LogFile.cpp" />
     <ClCompile Include="Desktop Pinochle Server.cpp" />
     <ClCompile Include="gameArchives.cpp" />
+    <ClCompile Include="client.cpp" />
     <ClCompile Include="gameList.cpp" />
     <ClCompile Include="gameListNode.cpp" />
     <ClCompile Include="pinochleRound.cpp" />

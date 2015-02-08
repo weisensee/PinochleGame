@@ -39,7 +39,7 @@ gameList::~gameList()			//destructor
 		delete [] currentList;
 }
 
-bool gameList::addGame(_PROCESS_INFORMATION * processInfo, player * curClient)		//add game with specified components to list if it's not already there
+bool gameList::addGame(_PROCESS_INFORMATION * processInfo, client * curClient)		//add game with specified components to list if it's not already there
 {
 	// If the list is full: 
 	if (total >= max)	//return an error
@@ -48,6 +48,24 @@ bool gameList::addGame(_PROCESS_INFORMATION * processInfo, player * curClient)		
 	// Otherwise create and add node to list
 	gameListNode * temp = new gameListNode(processInfo, curClient);
 	return add(temp);
+}
+int gameList::addclient(int gameID, client * newClient) {	//add specified client to specified game, returns count of players in game or -1 if no list or game found
+	std::string * name = new std::string(newClient->getName());
+	if (head) {							// if the list exists
+		gameListNode * prev = find_preceding(gameID);
+		if ((int)prev == 0) {		// check if the head node is the game specified the head node
+			head->addPlayer(name);
+			return head->playerCount();
+		}
+		else if ((int)prev == -1)			// game not found
+				return -1;
+		else {
+			prev->next->addPlayer(name);
+			return head->playerCount();
+		}
+	}
+	else
+		return -1;							// list not found
 }
 
 bool gameList::add(gameListNode * ngame)							//add ngame to list of active games
@@ -99,7 +117,7 @@ std::string gameList::getCurrent()		// copies formatted list of current active g
 	bool gameList::remove(int gameID)	// remove matching game from list
 {
 	// Retrieve the pointer to the node preceding gameID
-	gameListNode *found = find_preceeding(gameID);
+	gameListNode *found = find_preceding(gameID);
 
 	// Check for errors
 	if ((int)found == -1)		//if game not found
@@ -125,11 +143,11 @@ std::string gameList::getCurrent()		// copies formatted list of current active g
 
 	bool gameList::updateStatus(int gameID, char status)		//updates the list's current status for a specific game
 {
-	return find_preceeding(gameID)->updateStatus(status);		//find game and send update
+	return find_preceding(gameID)->updateStatus(status);		//find game and send update
 }
 
 // Returns a pointer to the node preceding gameID, -1 if failed, 0 if head, * to node otherwise
-gameListNode* gameList::find_preceeding(int fGameID) {
+	gameListNode* gameList::find_preceding(int fGameID) {
 
 	//check head Node return 0 if match
 	if (head->getID() == fGameID)
@@ -146,4 +164,5 @@ gameListNode* gameList::find_preceeding(int fGameID) {
 			return (gameListNode*)-1;				// return error
 	}
 
+	return NULL;
 }
