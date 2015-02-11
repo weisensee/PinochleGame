@@ -1,3 +1,4 @@
+packet specifications.txt
 Lucas Weisensee		Pinochle Game Server
 Packet and Client Communication Specifications for the Desktop Pinochle Server
 
@@ -12,19 +13,22 @@ Packet and Client Communication Specifications for the Desktop Pinochle Server
 ***************************************************************************************
 MESSAGE TITLE:
 ***************************************************************************************
-CODE ::	DESCRIPTION
-0	 :: Error/Message to client
-1	 :: Server Status
-2	 :: Client Connection Type
-3	 :: Request Player Name
-4	 :: Player Name
-5	 ::	Active Game List
-6	 :: Game Choice (connect to)
-7	 :: Game Connection Status
-8	 :: Become Player
-9	 :: Become Observer
-10	 :: Create Game
-
+TITLE 		:: CODE  ::	DESCRIPTION
+MSG 		::	0	 :: Error/Message to client
+S_STATUS	::	1	 :: Server Status
+CON_TYPE	::	2	 :: Client Connection Type
+R_PNAME 	::	3	 :: Request Player Name
+PNAME 		::	4	 :: Player Name
+G_LIST	 	::	5	 ::	Active Game List
+G_CHOICE 	::	6	 :: Game Choice (connect to)
+G_CON_STAT	::	7	 :: Game Connection Status
+BEC_PLAYER	::	8	 :: Become Player
+BEC_OBS		::	9	 :: Become Observer
+CREATE_G	::	10	 :: Create Game
+RESTART_G 	::	11	 :: Restart query
+RESTART_ANS ::	12	 :: Restart answer
+N_GQUERY 	::	13	 :: Query For new Game Creation Info
+N_GINFO 	::	14	 :: New Game Creation Info
 
 ***************************************************************************************
 MESSAGE DESCRIPTION:
@@ -37,10 +41,11 @@ CODE ::	DESCRIPTION
 			0: server not ready
 			1: server ready
 
-2	 :: Client Connection Type - Client sends char array "Response1":
-		Response1[0]:
-			0: initiates database access mode
-			1: request the list of active games
+2	 :: Client Connection Type - Client sends (int) response:
+		Response:
+			0: Initiates database access mode
+			1: Request the list of active games
+			2: Game Data entry mode
 
 3	 :: Request Player Name
 
@@ -86,3 +91,9 @@ CODE ::	DESCRIPTION
 			n: unsigned char
 			%s: New Game Name: '\0' delimited string 
 
+11	 :: Restart query
+		(char) ['^'] : notifies the player they have the chance to restart
+
+12	 :: Restart answer
+		bool 0: don'restart
+			 1: do restart

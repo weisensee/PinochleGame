@@ -8,7 +8,7 @@ Desktop Pinochle Client				Desktop Pinochle Client.txt		Connects to and play pin
 log									log.h							oversees creating and writing to log file
 
 Game Manager						pinochleGameManager.cpp			Proctors an active game, manages players
-Pinochle Game 						pinochleGame.h					Stores active game info
+Card Game 							cardGame.h						Stores/Manages active game 
 
 Game List 							gameList.cpp					Manages and stores list of active games
 Game List Node						gameListNode.h 					stores game items for active game list
