@@ -19,80 +19,112 @@
 		client ** OBSERVERS;
 		bool gameOver;
 		char gType;
+		char STATUS;			// Game's current status, 'W': waiting 'R': ready to play 'P':playing 'B':bored
+		LogFile * gLog;			// Game's log file
 */
 
 #include "cardGame.h"
 
-cardGame() {}
-cardGame(client * p1);
-void run();
-// Setup
+cardGame::cardGame() {}
+cardGame::cardGame(client * nPlayer) {	// Sets up new game
+	// Initiate log file
+	gLog = new LogFile("game log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\games");
 
-// Gameplay
+	// **********TESTING*************
+	echo(nPlayer);
 
+	// Get new game info
+	int result = nPlayer->sendM(N_GQUERY);		// new game info query
+	std::string * gameInfo;
+	result = nPlayer->getStrAnswer(gameInfo, N_GINFO);
 
-//starts new game thread with arguments [(1)int: number of players] [(2)string player 0 name] [(3)player 0 socket] [(4) int observer limit] [(5)int Game ID#] [(6)string Game Name]
-int  cardGame::run() {
-	// Query for game type
-	PLAYERS[0]->sendM(N_GQUERY);
-	std::string
+	// Setup Game
+	setupGame(gameInfo);
 
-	//Initiate new game setup
-	constructGame();
+	// Add player 1 to the game
+	addPlayer(nPlayer);
 
-
-	//Connect players/wait for start
-	//wait until the game is ready and players are ready to start
-	//game.ready() returns -1 if all players have left.
-	prepforstart();
-
-	//play games until users want to quit
-	do {
-		//Manage play
-		manageGamePlay();
-
-		//Save game to archives
-		saveGame();
-
-	} while(!restart());	//Play another game if users want
-
-	quit(1);
-
-	return 0;
-}
-void cardGame::prepForStart() {		//manages the waiting/setup process
-	while(ready() > 0) {					//while the game is not ready or empty
-		addnewplayer();		//check for new players to add to game
-		checkplayercommand();	//check for player requests
+	// Wait for game to be ready
+	while (STATUS != 'R') {
+		// Check for new players
+		// Check for player requests
+		// Update current players
 	}
 
-	if (ready() < 0)					//if all players have left
-		quit(0);						//quit without saving
+	// Once ready, play game:
+	do {
+		play(gType);
+	} while (restart());		// While players still want to play, verify game-type data and restart
+
+	// game data should be saved after each round, so no current need for a cleanup function.
 }
+void cardGame::play(char gType) {	// Launch the game type specified
+	switch (gType) {
+	case 'P':
+		managePinochleGamePlay();
+		break;
+	case 'E':
+		manageEuchreGamePlay();
+		break;
+	}
+}
+void cardGame::setupGame(std::string * gameInfo) {	// parses player's game type request and initializes play environment
+	// Ensure correct message was received by checking code byte at front
+	if (gameInfo->at(0) == N_GINFO)	{
+		// Iterate over gameInfo, processing information
+		int counter = 1;
 
-//argv: [(1)int: number of players] [(2)string player 0 name] [(3)player 0 socket] [(4) int observer limit] [(5)int Game ID#] [(6)string Game Name]
-void cardGame::constructGame(char T) {				// initialize game variables
-	// Setup Player array
-	MAXPLAYERS = (int) *argv[1];
-	*PLAYERS = new player[MAXPLAYERS];
-	PLAYERS[0] = new player(argv[2], *argv[3]);	// add player 1 to playerlist
+		// Game Type
+		
+		// Number of players
+		
+		// Number of Observers
 
-	// Setup observer array
-	MAXOBSERVERS = *argv[4];
-	for (int i = 0; i < MAXOBSERVERS; ++i)
-		OBSERVERS[i] = NULL;
+		// Goal/winning score
 
-	// Initiate other constants
-	GAMEID = *argv[5];
-	SCORES = new int[2];
-	gameOver = false;
+		// Game name
+
+		// Initiate other constants
+		SCORES = new int[MAXPLAYERS/2];
+		gameOver = false;
+		totalObservers = 0;
+		totalPlayers = 0;
+
+		// Get game ID
+		GAMEID = getGameID();
+
+
+	}
+	else
+		gLog->writetolog("gameInfo setup string not of code 'N_GINFO'");
+}
+int cardGame::getGameID() {		// Returns game ID
+	return 1;
+}
+void cardGame::echo(client * curPlayer) {		// echoes and talks to current player
+	std::string * answer;
+	// send hello
+	curPlayer->sendM(0, "Hello client! welcome the card game situation!");
+
+	while (true) {
+		// Save and format answer
+		int result = curPlayer->getStrAnswer(answer);
+		answer->insert(0, "Answer received: ");
+		printf(answer->c_str());						// Print out player response
+
+		// Send response
+		answer->insert(0, "Thank you client for: ");
+		curPlayer->sendM(0, answer);
+		curPlayer->sendM(0, "would you like to send us anything else?");
+	}
+
 }
 void cardGame::addPlayer(client * newPlayer) {		//checks on and adds any new players
 
 }
 void cardGame::checkPlayerCommand() {	//check with and execute player commands
 }
-void manageEuchreGamePlay() {		// plays a euchre round
+void cardGame::manageEuchreGamePlay() {		// plays a euchre round
 	// Play Euchre
 }
 void cardGame::managePinochleGamePlay() {//plays a pinochle round
@@ -122,9 +154,17 @@ void cardGame::saveGame() {
 
 }
 bool cardGame::restart() {
-	for (int i = 0; i < playerCount; i++) {
-		PLAYERS[i]->sendM(RESTART_Q)
+	int temp;
+	int ans = 0;
+	for (int i = 0; i < totalPlayers; i++) {	// send query
+		PLAYERS[i]->sendM(RESTART_G);
 	}
+	for (int i = 0; i < totalPlayers; i++) {	// tally responses
+		PLAYERS[i]->getIntAnswer(&temp);
+		ans += temp;
+	}
+
+	return (totalPlayers == ans);				// return group decision
 }
 
 
