@@ -1,7 +1,7 @@
 /*	Desktop Server -- Pinochle Game Server
 Desktop Application
 Lucas Weisensee
-November 2014
+January 2015
 
 to START THE PROGRAM in command prompt::
 executableName PortNumber
@@ -44,37 +44,39 @@ This program will function as a desktop game server for a network based pinochle
 
 // *******************PRIVATE LIBRARIES::
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		//Log writing library
-#include "gameList.h"
-#include "client.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\cardGame.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\gameList.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"
 
 #define DEFAULT_BUFLEN 512
 #define GAME_MANAGER_APPLICATION "pinochleGameManager.exe"			// The individual game manager executable
 
 LogFile LogF;
-SECURITY_ATTRIBUTES secAttr;
 int MAX_THREADS = 20;
 int MAX_GAMES = 10;
 gameList ACTIVE_GAMES(MAX_GAMES);		// List of general info on all active games
 int connections;						// number of connections accepted
 
-void serverSetupPrep(int argc, char const *argv[], char * nPORT);		//Sets up the new server, checks inputs
+void setupServer(int argc, char const *argv[], char * nPORT);		//Sets up the new server, checks inputs
 SOCKET setupListenSocket(char * nPORT);				// Setup Listen socket for accepting new connections
 DWORD WINAPI handleNewClient(LPVOID* newSocket);// Handles a new client when connection is formed
-void playGames(client * curClient);				//sends active game list to client
-void receiveError(SOCKET ClientSocket);			//handles a receive error, prints to log
-void connectToDatabase(client * curClient);		// connects client to the database
+bool playGames(client * curClient);				// sends active game list to client, returns true if client may wish to continue server connection, false otherwise
+void receiveError(SOCKET ClientSocket);			// handles a receive error, prints to log
+bool liveGameDataEntry(client * curClient);		// allows client to enter live game data entry mode, returns true if client may wish to continue server connection, false otherwise
+bool consoleEchoTest(client * curClient);		// launches console echo testing, returns true if client may wish to continue server connection, false otherwise
+bool connectToDatabase(client * curClient);		// connects client to the database, returns true if client may wish to continue server connection, false otherwise
 void createGame(client * curClient);			//initiates the creation of a new game
 void joinGame(int choice, client * curClient);	//sends the client to the game specified
 void serverCleanUp();							// Cleans up allocated memory, threads and Socket overhead
 
 
 int main(int argc, char const *argv[]) {
-	char nPORT[6];			// The port number to be used for listening
-	serverSetupPrep(argc, argv, nPORT);	// Check inputs and initiate sever settings 
-
+	char nPORT[7];			// The port number to be used for listening
+	setupServer(argc, argv, nPORT);	// Check inputs and initiate sever settings 
 
 	// Create a SOCKET for the server to listen to
 	SOCKET ListenSocket = setupListenSocket(nPORT);
+	printf("\nServer initialized and listen socket setup, preparing to listen on port %s", nPORT);
 
 	// Temp Socket for new clients
 	SOCKET * ClientSocket;	
@@ -114,8 +116,7 @@ int main(int argc, char const *argv[]) {
 	serverCleanUp();
 	return 0;
 }
-void setupServer(int argc, char const *argv[], char * nPORT)		//Sets up the new server, prepares to listen for connections
-{
+void setupServer(int argc, char const *argv[], char * nPORT) {		//Sets up the new server, prepares to listen for connections
 	//Check for proper command line usage
 	if (argc < 2) {
 		fprintf(stderr, "\n%s usage: %s port-number\n", argv[0], argv[0]);
@@ -124,18 +125,10 @@ void setupServer(int argc, char const *argv[], char * nPORT)		//Sets up the new 
 
 	// Set port number
 	strncpy(nPORT, argv[1], strlen(argv[1]));
-	nPORT[strlen(argv[1])] = '\0';
+	nPORT[strlen(argv[1])] = '\0';	
 
-	// Initiate server type log file in location specified`
+	// Initiate server type log file in location specified
 	LogF.setLogFileName("server log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\server");
-
-	printf("\nSetting up connection\n");
-
-	// Set pipes to inherited so server can communicate with child processes
-	secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-	secAttr.bInheritHandle = TRUE;
-	secAttr.lpSecurityDescriptor = NULL;
-
 
 }
 SOCKET setupListenSocket(char * nPORT) {
@@ -204,102 +197,138 @@ SOCKET setupListenSocket(char * nPORT) {
 
 	return ListenSocket;
 }
-
 DWORD WINAPI handleNewClient(LPVOID* newSocket) {	// Handles an individual Client::
 	//initiate variables
 	client curClient((SOCKET)newSocket);	// Create new client object
-	curClient.setName();
+	//curClient.setName();
+	bool continu = true;		// does the client want to quit
+	int answer, result = 0;			// result of client's interactions
 
 	//Direct the client to the correct path and close the connection when finished
-	int answer = curClient.getConnectionType();
+		/* execute clients request, see "packet specifications.txt" for more info
+				1: Request the list of active games
+				2: Game Data entry mode
+				3: Initiates database access mode
+				4: console echo testing */
+	while (continu) {
+		// get client connection preference
+		std::string temp = "1";
+		curClient.sendM(S_STATUS, &temp);
+		//**************************NEEDS NULL POINTER CHECK*********************************
+		result = curClient.getIntAnswer(&answer);	// save client's answer
 
-	if (answer == 1)					//if the client wants to play games							
-		playGames(&curClient);
-	else if (answer == 2)				// If the client wants to access the game database
-		connectToDatabase(&curClient);
-
+		// if the answer was received successfully
+		if (result = 1) {
+			// initiate the connection the client wants
+			switch (answer) {
+			case 0:						// if the client wants quit						
+				continu = true;			// quit
+				break;
+			case 1:						// if the client wants to play games							
+				continu = playGames(&curClient);
+				break;
+			case 2:						// allows client to enter live game data entry mode
+				continu = liveGameDataEntry(&curClient);
+				break;
+			case 3:						// If the client wants to access the game database
+				continu = connectToDatabase(&curClient);
+				break;
+			case 4:
+				continu = consoleEchoTest(&curClient);	// launches console echo testing
+				break;
+			default:		// if client didn't enter a valid command
+				continu = 1;	// allow them to try again
+				break;
+			}
+		}
+		// if client connection is closed
+		else if (result == -1)
+			continu = false;		// quit
+	}
 	// End current connection and operations
 	WSACleanup();				//deallocates data after execution's complete
-	return 1;					//close program
+	return 1;					//close thread
 }
-void playGames(client * curClient)		// Queries and sends client to desired game-path
+bool playGames(client * curClient)		// Queries and sends client to desired game-path
 {
 	// Send list of current games to client
 	std::string currentGameList = ACTIVE_GAMES.getCurrent();	//gets list of active games for client to connect to
 	curClient->sendM(5, &currentGameList);		// Send to current list client
 
 	// Parse user game choice: start new game or join an existing one
-	int choice = curClient->getIntAnswer();	// Get game choice from client
-	if (choice == 0)							// if client chose to setup a new game
-		createGame(curClient);					// set it up
-	else if (choice > 0)						// If client chose to connect to an existing game
-		joinGame(choice, curClient);				// connect to it
+	int choice;
+	int result = curClient->getIntAnswer(&choice);	// Get game choice from client
+
+	// if receive was successful
+	if (result == 1) {
+		if (choice == 0)						// if client chose to setup a new game
+			createGame(curClient);				// set it up
+		else if (choice > 0)					// If client chose to connect to an existing game
+			joinGame(choice, curClient);		// connect to it
+	}
+	// if receive failed
+	else {
+		LogF.writetolog("Receive Error: playGames: getIntAnswer: ", result);		// write failure to log and exit
+		// if connection was closed
+		if (result == -1)
+			return 0;		// quit connection
+	}
+
+	// return to main menu
+	return true;
 
 }
-
-void receiveError(client * curClient)		//handles a receive error, prints to log
+void receiveError(client * curClient)		//handles a receive error, prints to log, returns true if client may wish to continue server connection, false otherwise
 {
 		LogF.writetolog("receive failed: ", WSAGetLastError());
 		closesocket(curClient->getSocket());
 		WSACleanup();
 }
-
-void connectToDatabase(client * curClient)	// connects client to the database
+bool connectToDatabase(client * curClient)	// connects client to the database, returns true if client may wish to continue server connection, false otherwise
 {
 	std::string buffer;
 	buffer += "Hi, game database coming soon...";
 	curClient->sendM(0, buffer.c_str());			// send descriptive error message to client
+	
+	// return to main menu
+	return true;
 }
+void createGame(client * curClient) {			//initiates the creation of a new game
+	cardGame cardGame(curClient);
 
-void createGame(client * curClient)	{		// Creates a new thread for a new game manager by the given client
-	// Initiate variables
-	STARTUPINFO startupInfo;
-	HANDLE child_IN_Rd = NULL;
-	HANDLE child_IN_Wr = NULL;
-	HANDLE child_OUT_Rd = NULL;
-	HANDLE child_OUT_Wr = NULL;
-	_PROCESS_INFORMATION * processInfo;
-	ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION));	// Ensure process data-structure memory is zeroed
-
-
-	// Create a pipe for the child process's STD OUT
-	if (!CreatePipe(&child_OUT_Rd, &child_OUT_Wr, &secAttr, 0))
-		LogF.writetolog("StdoutRd CreatePipe");
-
-	// Ensure the read handle to the pipe for STDOUT is not inherited
-	if (!SetHandleInformation(child_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-		LogF.writetolog("Stdout SetHandleInformation");
-
-	// Create a pipe for the child process's STDIN.
-	if (!CreatePipe(&child_IN_Rd, &child_IN_Wr, &secAttr, 0))
-		LogF.writetolog("Stdin CreatePipe");
-
-	// Ensure the write handle to the pipe for STDIN is not inherited
-	if (!SetHandleInformation(child_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-		LogF.writetolog("Stdin SetHandleInformation");
-
-	// Create new game process
-	CreateProcess(GAME_MANAGER_APPLICATION,
-		0,			// Command line
-		NULL,           // Process handle not inheritable
-		NULL,           // Thread handle not inheritable
-		FALSE,          // Set handle inheritance to FALSE
-		0,              // No creation flags
-		NULL,           // Use parent's environment block
-		NULL,           // Use parent's starting directory 
-		&startupInfo,   // STARTUPINFO structure
-		processInfo);   // PROCESS_INFORMATION structure
-
-	// Wait for new process to be setup/idle (processHANDLE, MillisecondWait)
-	DWORD ready = WaitForInputIdle(processInfo->hProcess, 5000);
-
-	if (ready == 0)					// If the new process if ready to receive game info
-		if (!ACTIVE_GAMES.addGame(processInfo, curClient))
-			LogF.writetolog("game list full");
-	else
-		LogF.writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
 }
+bool consoleEchoTest(client * curClient) {		// launches console echo testing, returns true if client may wish to continue server connection, false otherwise
+	// send welcome message to client
+	int result = curClient->sendM(MSG, "Welcome to the console echo test! what would you like me to echo?");
 
+	// echo messages with client until they want to quit
+	std::string answer;
+	bool quit = false;
+	while (!quit)	
+	{
+		result = curClient->getStrAnswer(&answer);
+
+		if (strcmp(answer.c_str(), "quit") == 0)
+			printf("\nclient message matches 'quit', client message: %s", answer.c_str());
+
+		// if the client shuts down the connection or sends message "quit"
+		if (result == -1 || strcmp(answer.c_str(), "quit") == 0)
+			quit = true;	// quit on the server end as well
+
+		// if the message was received successfully
+		if (result == 1) {
+			answer.insert(0, "received: ");	// modify
+			curClient->sendM(MSG, &answer);
+		}
+
+	}
+
+	return true;
+}
+bool liveGameDataEntry(client * curClient) {				// allows client to enter live game data entry mode, returns true if client may wish to continue server connection, false otherwise
+	printf("executing \"liveGameDataEntry\" function");
+	return true;
+}
 // Adds specified client to game
 void joinGame(int choice, client * curClient)				// sends the client to the game specified
 {
@@ -315,3 +344,53 @@ void serverCleanUp() { // Cleans up allocated memory, threads and Socket overhea
 
 	// Do other stuff
 }
+/*
+void createGameProcess(client * curClient)	{		// Creates a new thread for a new game manager by the given client
+// Initiate variables
+STARTUPINFO startupInfo;
+HANDLE child_IN_Rd = NULL;
+HANDLE child_IN_Wr = NULL;
+HANDLE child_OUT_Rd = NULL;
+HANDLE child_OUT_Wr = NULL;
+_PROCESS_INFORMATION * processInfo;
+ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION));	// Ensure process data-structure memory is zeroed
+
+
+// Create a pipe for the child process's STD OUT
+if (!CreatePipe(&child_OUT_Rd, &child_OUT_Wr, &secAttr, 0))
+LogF.writetolog("StdoutRd CreatePipe");
+
+// Ensure the read handle to the pipe for STDOUT is not inherited
+if (!SetHandleInformation(child_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
+LogF.writetolog("Stdout SetHandleInformation");
+
+// Create a pipe for the child process's STDIN.
+if (!CreatePipe(&child_IN_Rd, &child_IN_Wr, &secAttr, 0))
+LogF.writetolog("Stdin CreatePipe");
+
+// Ensure the write handle to the pipe for STDIN is not inherited
+if (!SetHandleInformation(child_IN_Wr, HANDLE_FLAG_INHERIT, 0))
+LogF.writetolog("Stdin SetHandleInformation");
+
+// Create new game process
+CreateProcess(GAME_MANAGER_APPLICATION,
+0,			// Command line
+NULL,           // Process handle not inheritable
+NULL,           // Thread handle not inheritable
+FALSE,          // Set handle inheritance to FALSE
+0,              // No creation flags
+NULL,           // Use parent's environment block
+NULL,           // Use parent's starting directory
+&startupInfo,   // STARTUPINFO structure
+processInfo);   // PROCESS_INFORMATION structure
+
+// Wait for new process to be setup/idle (processHANDLE, MillisecondWait)
+DWORD ready = WaitForInputIdle(processInfo->hProcess, 5000);
+
+if (ready == 0)					// If the new process if ready to receive game info
+if (!ACTIVE_GAMES.addGame(processInfo, curClient))
+LogF.writetolog("game list full");
+else
+LogF.writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
+}
+*/

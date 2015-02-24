@@ -1,9 +1,9 @@
 Lucas Weisensee
-Last Updated Jan 26 2015
+Last Updated Feb 11 2015
 Pinochle Game Project
 
 OVERVIEW::
-The aim of this project is to create a functional Pinochle Game utilizing different forms of AI and machine learning that is playable on a variety of different systems.
+The aim of this project is to create a functional Pinochle and Euchre Game utilizing different forms of AI and machine learning that is playable on a variety of different systems.
 
 TECHNICAL INFORMATION::
 See "Documentation" directory for more detailed specifications about project
@@ -11,7 +11,7 @@ See "Documentation" directory for more detailed specifications about project
 COMPONENTS OF THIS PROJECT::
 -Game Database 	-- stores past games for machine learning access
 -Game Server 	-- hosts database and online playing environment
--Pinochle AI 	-- plays against players and learns as it goes
+-Game AI 		-- plays against players and learns as it goes: plays pinochle and euchre
 -WebApp 		-- Allows players to play online from different platforms
 -Phone App 		-- Allows android users to play natively on their system
 
@@ -19,7 +19,6 @@ HOW TO PLAY::
 no way yet, hold your horses!
 
 FUTURE EXPANSION::
--add euchre
 -add bridge
 -incorporate AJ's nertz game to speed things up for him?
 

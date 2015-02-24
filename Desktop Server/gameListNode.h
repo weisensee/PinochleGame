@@ -10,7 +10,7 @@
 #pragma once
 #include <string>
 #include <windows.h>
-#include "client.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"
 
 
 class gameListNode

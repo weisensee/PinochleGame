@@ -52,7 +52,7 @@
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -72,12 +72,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Library\LogFile.cpp" />
+    <ClCompile Include="..\Library\serverException.cpp" />
+    <ClCompile Include="..\Library\message.cpp" />
+    <ClCompile Include="..\Library\client.cpp" />
     <ClCompile Include="Desktop Pinochle Server.cpp" />
     <ClCompile Include="gameArchives.cpp" />
-    <ClCompile Include="client.cpp" />
     <ClCompile Include="gameList.cpp" />
     <ClCompile Include="gameListNode.cpp" />
-    <ClCompile Include="pinochleRound.cpp" />
+    <ClCompile Include="cardGame.cpp" />
+    <ClCompile Include="..\Library\pinochleRound.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gameArchives.h" />

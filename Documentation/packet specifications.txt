@@ -35,17 +35,20 @@ MESSAGE DESCRIPTION:
 ***************************************************************************************
 CODE ::	DESCRIPTION
 0	 :: Error/Message to client
-		Simple error message/notification to print out to client or user
+		(string) Simple error message/notification to print out to client or user
+
 1	 :: Server Acknowledges Connection and Readiness to Continue: [ServerStatus]
-		ServerStatus: (short)n
+		ServerStatus: (int)
 			0: server not ready
 			1: server ready
 
 2	 :: Client Connection Type - Client sends (int) response:
 		Response:
-			0: Initiates database access mode
+			0: Quit/Disconnect/None of the above
 			1: Request the list of active games
-			2: Game Data entry mode
+			2: Live Game Data entry mode
+			3: Initiates database access mode
+			4: console echo testing
 
 3	 :: Request Player Name
 
@@ -97,3 +100,14 @@ CODE ::	DESCRIPTION
 12	 :: Restart answer
 		bool 0: don'restart
 			 1: do restart
+
+13	 :: Query For new Game Creation Info
+		(char) ['^'] : queries user for new game info
+
+14	 :: New Game Creation Info
+		char array in the following order:
+		Game Type: (char) 'P' or 'E' (pinochle or euchre)
+		Number of Players: (char) number of players to set the game up with
+		Number of Observers: (char) number of observers to limit for the game
+		Winning Score: (int) number of points to win
+		Game Name: (char []) name for current game, null terminated

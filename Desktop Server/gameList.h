@@ -16,7 +16,7 @@
 #define WIN32_LEAN_AND_MEAN
 #pragma once
 #include "gameListNode.h"
-#include "client.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"
 
 class gameList
 {	

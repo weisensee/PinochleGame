@@ -30,7 +30,16 @@
     <ClCompile Include="pinochleRound.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Library\log.cpp">
+    <ClCompile Include="..\Library\LogFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="message.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cardGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
