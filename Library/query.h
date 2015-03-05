@@ -8,7 +8,6 @@
 #include <iostream>
 #include <string>
 
-
 class query
 {
 public:
@@ -22,3 +21,4 @@ public:
 
 	/* data */
 };
+

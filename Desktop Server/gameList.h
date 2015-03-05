@@ -27,7 +27,7 @@ public:
 	int addclient(int gameID, client * newclient);	//add specified client to specified game
 	bool add(gameListNode * ngame);							// add ngame to list of active games
 	bool addGame(_PROCESS_INFORMATION * processInfo, client * curClient);					// add new process/game and client to list
-	std::string getCurrent();	//copies formatted list of current active games to sendList, returns true if list existed
+	std::string getCurrent();	//returns formatted list of current active games to sendList
 	int total_games();					//returns total active games in list
 	bool updateStatus(int gameID, char status);		//updates the lists current status for a specific game
 

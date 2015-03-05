@@ -23,12 +23,14 @@ G_LIST	 	::	5	 ::	Active Game List
 G_CHOICE 	::	6	 :: Game Choice (connect to)
 G_CON_STAT	::	7	 :: Game Connection Status
 BEC_PLAYER	::	8	 :: Become Player
-BEC_OBS		::	9	 :: Become Observer
 CREATE_G	::	10	 :: Create Game
 RESTART_G 	::	11	 :: Restart query
 RESTART_ANS ::	12	 :: Restart answer
 N_GQUERY 	::	13	 :: Query For new Game Creation Info
 N_GINFO 	::	14	 :: New Game Creation Info
+BEC_OBS		::  16	 :: Become Observer
+STAT_QUERY	::	18	 :: Status query of current game
+G_STATUS	::	19	 :: Status of current game
 
 ***************************************************************************************
 MESSAGE DESCRIPTION:
@@ -85,9 +87,6 @@ CODE ::	DESCRIPTION
 		(int) a ['^']
 		a: desired player number
 
-9	 :: Become Observer 
-		(char) ['^']
-
 10	 :: Create Game
 		(int) n ['^'] %s ['^']: create new game with n users and %s Gamename, '^': char delimiter between data values
 			^: char == '^'
@@ -105,9 +104,21 @@ CODE ::	DESCRIPTION
 		(char) ['^'] : queries user for new game info
 
 14	 :: New Game Creation Info
+			(Type)'^'(number of players)'^'(number of observers)'^'(winning score)'^'(game name)
 		char array in the following order:
 		Game Type: (char) 'P' or 'E' (pinochle or euchre)
 		Number of Players: (char) number of players to set the game up with
 		Number of Observers: (char) number of observers to limit for the game
 		Winning Score: (int) number of points to win
 		Game Name: (char []) name for current game, null terminated
+
+16	 :: Become Observer 
+		(char) ['^']
+
+18	 :: Status query of current game
+		(optional char[]) gameName
+
+19	 :: Status of current game
+		(status)['^'](game name)
+		(char) status
+		(char *) gameName

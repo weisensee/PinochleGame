@@ -24,19 +24,24 @@
 class cardGame: public message {
 public:
 	cardGame();
-	cardGame(client * p1);
+	cardGame(client * p1, char * type, int * playerNum, int * obsNum, int * goal, std::string * gameName);
 	void run();
 
 private:
 	// Setup
-	void cardGame::setupGame(std::string * gameInfo);	// parses player's game type request and initializes play environment
-	void addPlayer(client * newPlayer);					//checks on and adds any new players
-	void echo(client * curPlayer);						// echoes and talks to current player, for network testing purposes
-	int getGameID();									// Returns game ID
-
-	void prepForStart();		//manages the waiting/setup process
+	void cardGame::setupGame(char * ntype, int * playerNum, int * obsNum, int * gGoal, std::string * gameName);	// parses player's game type request and initializes play environment
+	bool checkForConnections();					// checks for new incoming connections
+	bool addPlayer(client * newPlayer);			// adds specified new player
+	void echo(client * curPlayer);				// echoes and talks to current player, for network testing purposes
+	int getGameID();							// Returns game ID
 	int ready();				// Returns true if the game is ready
-	void checkPlayerCommand();	//check with and execute player commands
+	bool makePlayer(client * player);			// adds player to current players, returns true if successful, false otherwise
+
+
+	// player communication
+	bool executeRequest(client * player);		// checks for and executes any commands from player
+	bool checkForRequests();					// checks for requests from clients
+	bool handleRequest(client * player, unsigned char request);	// handles request from client and notifies client of request status, returns true if success
 
 	// Game Control Flow
 	void play(char gType);	// Launch the game type specified
@@ -57,7 +62,7 @@ private:
 	// Data
 	int MAXOBSERVERS, MAXPLAYERS, GAMEID, GOAL;	// Maximum Observers and players, game's unique id, winning goal
 	int totalPlayers, totalObservers;
-	int * SCORES;
+	int * SCORES;						// current teams' scores
 	std::string * gameName;
 	client ** PLAYERS;
 	client ** OBSERVERS;

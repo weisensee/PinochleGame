@@ -10,6 +10,7 @@
 */
 
 #pragma once
+#define DEFAULT_PORT 444444
 
 //		CODE		ID 		DESCRIPTION
 #define MSG 		100	 // Error/Message to client
@@ -21,13 +22,15 @@
 #define G_CHOICE 	6	 // Game Choice (connect to)
 #define G_CON_STAT	7	 // Game Connection Status
 #define BEC_PLAYER	8	 // Become Player
-#define BEC_OBS		9	 // Become Observer
 #define CREATE_G	10	 // Create Game
 #define RESTART_G 	11	 // Restart query
 #define RESTART_ANS 12	 // Restart answer
 #define N_GQUERY 	13	 // Query For new Game Creation Info
 #define N_GINFO 	14	 // New Game Creation Info
-
+#define BEC_OBS		16	 // Become Observer
+#define STAT_QUERY	18	 // Status query of current game
+#define G_STATUS	19	 // Status of current game
+	
 class message {
 public:
 	message();

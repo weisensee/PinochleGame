@@ -25,30 +25,30 @@
 
 #include "cardGame.h"
 
+
 cardGame::cardGame() {}
-cardGame::cardGame(client * nPlayer) {	// Sets up new game
-	// Initiate log file
-	gLog = new LogFile("game log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\games");
-
-	// **********TESTING*************
-	echo(nPlayer);
-
-	// Get new game info
-	int result = nPlayer->sendM(N_GQUERY);		// new game info query
-	std::string * gameInfo;
-	result = nPlayer->getStrAnswer(gameInfo, N_GINFO);
+cardGame::cardGame(client * p1, char * ntype, int * playerNum, int * obsNum, int * gGoal, std::string * gameName) {	// Sets up new game
 
 	// Setup Game
-	setupGame(gameInfo);
+	setupGame(ntype, playerNum, obsNum, gGoal, gameName);
 
 	// Add player 1 to the game
-	addPlayer(nPlayer);
+	addPlayer(p1);
 
 	// Wait for game to be ready
 	while (STATUS != 'R') {
 		// Check for new players
+		checkForConnections();
+
 		// Check for player requests
+		checkForRequests();
 		// Update current players
+
+		// ??
+
+		// check if game is ready
+		if (ready())
+			STATUS = 'R';
 	}
 
 	// Once ready, play game:
@@ -57,6 +57,50 @@ cardGame::cardGame(client * nPlayer) {	// Sets up new game
 	} while (restart());		// While players still want to play, verify game-type data and restart
 
 	// game data should be saved after each round, so no current need for a cleanup function.
+}
+bool cardGame::checkForConnections() {				// checks for new incoming connections
+	printf("\nchecking for connections...");
+
+	return true;
+}
+bool cardGame::checkForRequests() {					// checks for requests from clients
+	for (int i = 0; i < MAXPLAYERS; i++) {			// for each possible player
+		if (PLAYERS[i] != NULL)						// if there is a player currently connected
+			executeRequest(PLAYERS[i]);				// check and execute any commands
+	}
+	for (int i = 0; i < MAXOBSERVERS; i++) {			// for each possible player
+		if (OBSERVERS[i] != NULL)						// if there is a player currently connected
+			executeRequest(OBSERVERS[i]);				// check and execute any commands
+	}
+}
+bool cardGame::executeRequest(client * player) {		// checks for and executes any commands from player
+	// check for unhandled responsed
+	unsigned char request;
+	while (player->hasRequests()) {
+		// get request from client
+		request = player->getNextRequest();
+
+		// handle request
+		if (handleRequest(player, request) == false)
+			return false;
+	}
+
+	// return success
+	return true;
+}
+bool cardGame::handleRequest(client * player, unsigned char request) {	// handles request from client and notifies client of request status, returns true if success
+	// execute appropriate response to request passed in as argument
+	switch (request) {
+	case STAT_QUERY:	// client requests game status
+		player->sendM(G_STATUS, STATUS);
+		player->requestHandled(G_STATUS);
+		break;
+	case BEC_PLAYER:
+		player->requestHandled(BEC_PLAYER, makePlayer(player));
+	}
+}
+bool cardGame::makePlayer(client * player)	{	// adds player to current players, returns true if successful, false otherwise
+	// add player to player list
 }
 void cardGame::play(char gType) {	// Launch the game type specified
 	switch (gType) {
@@ -68,57 +112,49 @@ void cardGame::play(char gType) {	// Launch the game type specified
 		break;
 	}
 }
-void cardGame::setupGame(std::string * gameInfo) {	// parses player's game type request and initializes play environment
-	// Ensure correct message was received by checking code byte at front
-	if (gameInfo->at(0) == N_GINFO)	{
-		// Iterate over gameInfo, processing information
-		int counter = 1;
+void cardGame::setupGame(char * ntype, int * playerNum, int * obsNum, int * gGoal, std::string * gameName) {	// parses player's game type request and initializes play environment
+	// Initiate log file
+	gLog = new LogFile("game log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\games");
 
-		// Game Type
-		
-		// Number of players
-		
-		// Number of Observers
-
-		// Goal/winning score
-
-		// Game name
-
-		// Initiate other constants
-		SCORES = new int[MAXPLAYERS/2];
-		gameOver = false;
-		totalObservers = 0;
-		totalPlayers = 0;
-
-		// Get game ID
-		GAMEID = getGameID();
+	// Setup game info
+	gType = *ntype;
+	MAXPLAYERS = *playerNum;
+	MAXOBSERVERS = *obsNum;
+	GOAL = *gGoal;
+	PLAYERS = new client*[MAXPLAYERS];
+	gameName->assign(gameName->c_str());
+	SCORES = new int[MAXPLAYERS/2];
+	gameOver = false;
+	totalObservers = 0;
+	totalPlayers = 0;
 
 
-	}
-	else
-		gLog->writetolog("gameInfo setup string not of code 'N_GINFO'");
+	// *******************TESTING*******************
+	printf("Setting up %s a game of: %c for %d players and %d observers. The winning score will be: %d.", *gameName, gType, MAXPLAYERS, MAXOBSERVERS, GOAL);
+
+
 }
 int cardGame::getGameID() {		// Returns game ID
 	return 1;
 }
-void cardGame::echo(client * curPlayer) {		// echoes and talks to current player
-	std::string * answer;
-	// send hello
-	curPlayer->sendM(0, "Hello client! welcome the card game situation!");
-
-	while (true) {
-		// Save and format answer
-		int result = curPlayer->getStrAnswer(answer);
-		answer->insert(0, "Answer received: ");
-		printf(answer->c_str());						// Print out player response
-
-		// Send response
-		answer->insert(0, "Thank you client for: ");
-		curPlayer->sendM(0, answer);
-		curPlayer->sendM(0, "would you like to send us anything else?");
-	}
-
-}
+//void cardGame::echo(client * curPlayer) {		// echoes and talks to current player
+//	std::string * answer;
+//	// send hello
+//	curPlayer->sendM(0, "Hello client! welcome the card game situation!");
+//
+//	while (true) {
+//		// Save and format answer
+//		int result = curPlayer->getStrAnswer(answer);
+//		std::string answer->insert(0, "Answer received: ");
+//		printf(answer->c_str());						// Print out player response
+//
+//		// Send response
+//		answer->insert(0, "Thank you client for: ");
+//		curPlayer->sendM(0, answer);
+//		curPlayer->sendM(0, "would you like to send us anything else?");
+//	}
+//
+//}
 void cardGame::addPlayer(client * newPlayer) {		//checks on and adds any new players
 
 }
@@ -188,6 +224,6 @@ void cardGame::quit(int type) {		// shutdown/save the game and close connections
 	WSACleanup();		//deallocates WSA data
 }
 
-int cardGame::ready() {				// Returns true if the game is ready
-	return true;
+int cardGame::ready() {				// Returns true if the game is at capacity
+	return totalPlayers == MAXPLAYERS;
 }

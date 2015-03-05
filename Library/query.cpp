@@ -23,7 +23,7 @@ int query::iQuery(char * query) {	// Queries user for integer
 }
 char query::cQuery(char * query, char * answers) {	// Queries user for char answer
 	printf(query);
-	char ans, *check;
+	char ans;
 	do {
 		// print what answers are acceptable
 		printAcceptableAns(answers);
@@ -32,9 +32,8 @@ char query::cQuery(char * query, char * answers) {	// Queries user for char answ
 		std::cin.get(ans);
 		std::cin.ignore(100, '\n');
 
-		// check for appropriate ans
-		check = strchr(answers, ans);
-		if (*check != NULL)
+		// check that ans appears somewhere in answers (acceptable answers to query), check the upper and lower case version of user answer 'ans'
+		if (strchr(answers, tolower(ans)) != NULL || strchr(answers, toupper(ans)) != NULL)
 			return ans;
 
 		// if answer did not match acceptable answers, restart
@@ -56,7 +55,8 @@ std::string * query::sQuery(char * query) {		// Queries user for string answer
 void query::printAcceptableAns(char * answers) {	//prints what answers are acceptable
 	if (answers) {
 		std::cout << "\nPlease enter: " << answers[0];	// print first possible answer
-		for (int i = 1; true; i++) {
+		int len = strlen(answers);
+		for (int i = 1; i < len; i++) {
 			if (answers[1] != '\0')
 				std::cout << " or " << answers[i];
 		}

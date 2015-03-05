@@ -9,18 +9,20 @@ It will allow a developer to run a series of testing functions locally.
 
 #define WIN32_LEAN_AND_MEAN
 
-//#include "stdafx.h"
+#pragma once
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <deque>
 
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		// Log writing class
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"		// Client communication class
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\query.h"		// Client communication class
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\serverException.h"		// Client communication class
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\gamePlayer.h"		// client game player managing class
 
 
 // link with required libraries
@@ -33,15 +35,26 @@ It will allow a developer to run a series of testing functions locally.
 
 LogFile LogF;
 query userQuery;
-
+client * server;
+char TYPE = 'E';
+int PLAYERS = 4;
+int OBSERVERS = 2;
+int GOAL = 1500;
+int pNUM;
+std::string * GAMENAME = new std::string("def_game_name");
 
 bool setupConnection(int argc, char **argv, char * nPORT);	// Setup connection to server
 SOCKET setupListenSocket(char * nPORT, char **argv);		// Setup listen socket with server
-void communicateWithServer(client * server);				// Run tests/communicate with server
-bool launchEchoRoom(client * server);						// Echo testing room with server
-bool playGames(client * server);			// start playing games
-bool liveDataEntry(client * server);		// start live entry mode
-bool accessDatabase(client * server);		// connect to database
+void communicateWithServer();				// Run tests/communicate with server
+bool launchEchoRoom();						// Echo testing room with server
+bool playGames();			// start playing games
+void sendCreationInfo();	// creates and sends game creation info string
+bool queryForGameInfo(char type); // gets and sends the new game creation info from user
+bool liveDataEntry();		// start live entry mode
+bool accessDatabase();		// connect to database
+bool printGameList(std::string * currentGameList);	// print arg as current list, return true if list exists, false if no list
+bool createGame();									// create a new game
+bool joinGame(int toPlay);							// join the existing game (gameID = toPlay);
 
 int main(int argc, char **argv)	
 {
@@ -63,11 +76,11 @@ int main(int argc, char **argv)
 		// if the socket setup was successful, continue with testing interface
 		else {
 			// Create server object
-			client * server = new client(listenSocket);
+			server = new client(listenSocket);
 
 			// testing interface with server
 			try {
-				communicateWithServer(server);
+				communicateWithServer();
 			} catch (serverException& e) {
 				printf(e.sendEr());
 			}
@@ -82,27 +95,7 @@ int main(int argc, char **argv)
 	}
 	return 0;	// exit
 }
-void communicateWithServer(client * server) {				// Run tests/communicate with server
-	/*     parameter testing::
-	// value testing
-	printf(received->c_str());
-	std::cout << "\nreceived->length: " <<  received->length();
-	printf("\nserver->getAnswerType(): %u", server->getAnswerType());
-	std::cout << "\nreceived->length(): " << received->length();
-	std::cout << "\nreceived->at(0): " << received->at(0);
-
-
-	if (result == 1)
-	const char servStatus = received->at(0);			// server status compare value, only necessary if
-
-	if (result == 1)
-		if (server->getAnswerType() == S_STATUS)
-			if (received->length() > 0)
-				if (atoi(&servStatus) == 1)
-					printf("\nserver ready message received successfully");
-					*/
-
-
+void communicateWithServer() {				// Run tests/communicate with server
 	// Check that server is synced/ready for connection
 	std::string * received = new std::string();
 
@@ -129,17 +122,16 @@ void communicateWithServer(client * server) {				// Run tests/communicate with s
 			case 0:
 				break;						// quit connection
 			case 1:
-				continu = playGames(server);			// start playing games
+				continu = playGames();			// start playing games
 				break;
 			case 2:
-				continu = liveDataEntry(server);		// start live entry mode
+				continu = liveDataEntry();		// start live entry mode
 				break;
 			case 3:
-				continu = accessDatabase(server);		// connect to database
+				continu = accessDatabase();		// connect to database
 				break;
 			case 4:
-				continu = launchEchoRoom
-					(server);		// start echo testing with server
+				continu = launchEchoRoom();		// start echo testing with server
 				break;
 			default:
 				printf("switch error in comminicateWithServer");	// error state
@@ -155,6 +147,8 @@ void communicateWithServer(client * server) {				// Run tests/communicate with s
 				rchar = "non-valid result";
 			printf("\nserver not connected, synced or ready, msg result = %d, message type received: %c, received->at(1): %s", result, server->getAnswerType(), rchar);
 			LogF.writetolog("connection setup failed.");
+			
+			continu = false;		// quit trying to connect
 		}
 	}
 }
@@ -166,9 +160,8 @@ bool setupConnection(int argc, char **argv, char * nPORT) {	// Initiates connect
 
 	//Check for proper command line usage
 	if (argc < 3) {
-		fprintf(stderr, "\n%s usage: %s hostname portnumber\n", argv[0], argv[0]);
-		LogF.writetolog("usage: hostname portnumber", (int)stderr);
-		return false;
+		fprintf(stderr, "\n%s usage: %s hostname portnumber\nUsing default port: %s", argv[0], argv[0], DEFAULT_PORT);
+		
 	}
 
 	// Set Port Number
@@ -247,19 +240,40 @@ SOCKET setupListenSocket(char * nPORT, char **argv) {
 
 	return serverSocket;
 }
-bool playGames(client * server) {			// start playing games
-	printf("playing games!");
-	return true;
+bool playGames() {			// start playing games
+	// Get current game list
+	std::string * currentGameList = new std::string;	// list of active games to connect to
+	int result = server->getStrAnswer(currentGameList, G_LIST);		// retrieve current list
+
+	// check that current list exists
+	if (currentGameList->length() < 1) 
+		printf("\nNo active games, please create a new game or check back later...");	// notify user if no current active games
+	else
+		printGameList(currentGameList);									// print current game list
+
+	// Pick game to join or play new game
+	int toPlay = userQuery.iQuery("\nWhich game would you like to play? Enter '0' to create a new game");
+
+	// Send game choice to server and check for errors
+	char temp[10];
+	if (server->sendM(G_CHOICE, itoa(toPlay, temp, 10)) < 1)
+		return false;
+	
+	// Execute answer
+	if (toPlay == 0)
+		return createGame();
+	else
+		return joinGame(toPlay);
 }
-bool liveDataEntry(client * server) {		// start live entry mode
+bool liveDataEntry() {		// start live entry mode
 	printf("beginning live data entry mode");
 	return true;
 }
-bool accessDatabase(client * server) {		// connect to database
+bool accessDatabase() {		// connect to database
 	printf("accessing database...");
 	return true;
 }
-bool launchEchoRoom(client * server) {					// Echo testing room with server
+bool launchEchoRoom() {					// Echo testing room with server
 	// make "quit" compare string:
 	std::string quitString = "quit";
 	int result;
@@ -293,5 +307,153 @@ bool launchEchoRoom(client * server) {					// Echo testing room with server
 
 	// notify user and exit echo session to menu
 	printf("exiting echo session");
+	return true;
+}
+bool printGameList(std::string * currentGameList) {	// print arg as current list*********return values should be cleaned up
+	char * game;				// stores each game's info string
+	std::deque<char*> games;	// list of game info strings
+
+
+	// Split game list up into strings
+	char * gameList = new char[currentGameList->length() + 1];
+	game =	strtok(gameList, "/");
+
+	// build game info string list
+	while (game != NULL) {
+		// add current game to back of queue
+		games.push_back(game);
+
+		// iterate to next game tokent
+		game = strtok(NULL, "/");
+	}
+
+	// Print each game
+	while (!games.empty()) {				// while there is another game token on the queue
+		// get next game string
+		game = games.front();
+
+		// Split game list up into info tokens
+		char * info = strtok(game, "^");	// split it into info tokens
+		int tknNum = 0;
+
+		while (info != NULL) {				// while there are more info tokens
+			switch (tknNum) {				// print out the appropriate info
+			case (0) :	// Status
+				printf("\nStatus: %s ", info);
+				break;
+			case (1) :	// Game ID
+				printf("game ID: %s ", info);
+				break;
+			case (2) :	// Game Creator
+				printf("game ID: %s ", info);
+				break;
+			case (3) :	// Player 1
+				printf("Player 1: %s ", info);
+				break;
+			case (4) :	// Player 2
+				printf("Player 2: %s ", info);
+				break;
+			case (5) :	// Player 3
+				printf("Player 3: %s ", info);
+				break;
+			case (6) :	// Player 4
+				printf("Player 4: %s ", info);
+				break;
+			case (7) :	// Player 5
+				printf("Player 5: %s ", info);
+				break;
+			case (8) :	// Player 6
+				printf("Player 6: %s ", info);
+				break;
+			default:
+				printf("Switch error: Player Overload!");
+				break;
+			}
+
+			// finished with current info token, iterate to next info item
+			info = strtok(NULL, "^");
+			tknNum++;
+		}
+
+		// finished with current game, iterate to next game string
+		games.pop_front();	// delete current item
+	}
+	
+	// complete
+	return true;
+}
+bool createGame() {					// create a new game
+	// send game creation info
+	std::string * temp = new std::string;
+	if (server->getStrAnswer(temp, N_GQUERY) == 1) {	// If new game query was received
+		// ask user if they'd like to create default or custom game
+		char ans = userQuery.cQuery("What type of new game would you like to create?\n[D]efault\n[P]inochle (custom)\n[E]uchre (custom)", "DPE");
+
+		// execute user game type creation choice
+		switch (toupper(ans)) {
+		case 'D':					// default game
+			sendCreationInfo();
+			break;
+		case 'P':					// pinochle game
+			queryForGameInfo('P');
+			break;
+		case 'E':					// euchre game
+			queryForGameInfo('E');
+			break;
+		default:
+			printf("switch error, ans = %c", ans);
+			return false;
+		}
+
+		// play game
+		gamePlayer newGame('H', server, TYPE, PLAYERS, GOAL, GAMENAME);
+		return newGame.play();
+
+	}
+	return true;
+}
+bool queryForGameInfo(char type) { // gets and sends the new game creation info from user
+	// max players
+	PLAYERS = userQuery.iQuery("How many players will this game be for?");
+
+	// max observers
+	OBSERVERS = userQuery.iQuery("How many observers will this game allow?");
+
+	// winning score
+	GOAL = userQuery.iQuery("What will be the winning score?");
+
+	// game name
+	GAMENAME = userQuery.sQuery("What will the game name be?");
+
+	sendCreationInfo();
+	return true;
+}
+void sendCreationInfo() {	// creates and sends game creation info string
+	std::string gameInfo;
+	char temp[24];
+	
+	// type
+	gameInfo.assign(1, TYPE);
+	gameInfo.append(1, '^');	// Delimiter 
+
+	// number of players
+	gameInfo.append(itoa(PLAYERS, temp, 10));
+	gameInfo.append(1, '^');	// Delimiter 
+
+	// number of observers
+	gameInfo.append(itoa(OBSERVERS, temp, 10));
+	gameInfo.append(1, '^');	// Delimiter 
+
+	// winning score
+	gameInfo.append(itoa(GOAL, temp, 10));
+	gameInfo.append(1, '^');	// Delimiter 
+
+	// game name
+	gameInfo.append(*GAMENAME);
+
+	// send info to server
+	server->sendM(N_GINFO, &gameInfo);
+}
+bool joinGame(int toPlay) {		// join the existing game (gameID = toPlay);
 	return true;
 }

@@ -103,9 +103,7 @@ std::string gameList::getCurrent()		// copies formatted list of current active g
 		toSend += "*";			// append closing symbol
 	}
 
-	// If the list doesn't exist return 0
-	else 
-		return 0;
+	// If the list doesn't exist return empty string
 	return toSend.c_str();			// returns success if list existed
 }
 
