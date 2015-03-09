@@ -12,15 +12,15 @@
 #include <iostream>
 
 
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		// Log writing class
+//#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		// Log writing class
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"		// Client communication class
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\query.h"		// Client communication class
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\gameSettings.h"
 
 
-class gamePlayer
-{
+class gamePlayer: gameSettings {
 public:
-	gamePlayer(char pType, client * nServer, char TYPE, int PLAYERS, int GOAL, std::string * GAMENAME);	//Starts a game with the given arguments: player type, server object, game type, max players, max observers, winning score, game name
+	gamePlayer(gameSettings *toMake, char pType, client * nServer);		// creates a game with the given arguments
 	~gamePlayer();
 	bool play();			// starts playing the game, returns true if player is still connected and may want to continue connection
 
@@ -33,10 +33,6 @@ private:
 
 	char playerType;
 	client * server;
-	char gameType;
-	int maxPlayers;
-	int goal;
-	char* gameName;
 	char gameStatus;		// current status of game
 	query userQuery;
 

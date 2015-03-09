@@ -18,12 +18,13 @@ It will allow a developer to run a series of testing functions locally.
 #include <iostream>
 #include <deque>
 
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		// Log writing class
+//#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		// Log writing class
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\message.h"		//message type library
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"		// Client communication class
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\query.h"		// Client communication class
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\serverException.h"		// Client communication class
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\query.h"		// User communication class
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\serverException.h"		// Handles server exceptions
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\gamePlayer.h"		// client game player managing class
-
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\gameSettings.h"
 
 // link with required libraries
 #pragma comment (lib, "Ws2_32.lib")
@@ -33,19 +34,20 @@ It will allow a developer to run a series of testing functions locally.
 
 #define DEFAULT_BUFLEN 512
 
-LogFile LogF;
-query userQuery;
-client * server;
-char TYPE = 'E';
-int PLAYERS = 4;
-int OBSERVERS = 2;
-int GOAL = 1500;
-int pNUM;
-std::string * GAMENAME = new std::string("def_game_name");
+//LogFile LogF;
+query userQuery;			// User querying object
+client * server;			// server communication object
+char playerType;
 
-bool setupConnection(int argc, char **argv, char * nPORT);	// Setup connection to server
+// Default Settings
+//char * DEFAULT_HOST = "localhost";
+
+gameSettings SETTINGS;
+int pNUM = -1;				// player's preferred number, for AI implementation
+
+bool setupConnection(int argc, char **argv, char* nPORT, char* HOST);	// Setup connection to server
 SOCKET setupListenSocket(char * nPORT, char **argv);		// Setup listen socket with server
-void communicateWithServer();				// Run tests/communicate with server
+void connectToServerSubsystem();			// Run tests/communicate with server
 bool launchEchoRoom();						// Echo testing room with server
 bool playGames();			// start playing games
 void sendCreationInfo();	// creates and sends game creation info string
@@ -59,9 +61,10 @@ bool joinGame(int toPlay);							// join the existing game (gameID = toPlay);
 int main(int argc, char **argv)	
 {
 	// Setup connection
-	char nPORT[7];
+	char nPORT[7];	// port to connect to
+	char * HOST = new char[DEFAULT_BUFLEN];	// host to connect to
 	SOCKET serverSocket = INVALID_SOCKET;
-	bool success = setupConnection(argc, argv, nPORT);
+	bool success = setupConnection(argc, argv, nPORT, HOST);
 
 	// if connection setup was successful, continue with socket setup
 	if (success) {
@@ -69,7 +72,7 @@ int main(int argc, char **argv)
 		SOCKET listenSocket = setupListenSocket(nPORT, argv);
 		if (listenSocket == INVALID_SOCKET) {
 			fprintf(stderr, "error: INVALID_SOCKET, quitting.");
-			LogF.writetolog("error: INVALID_SOCKET, quitting.");
+			//LogF.writetolog("error: INVALID_SOCKET, quitting.");
 			exit(0);
 		}
 
@@ -80,7 +83,7 @@ int main(int argc, char **argv)
 
 			// testing interface with server
 			try {
-				communicateWithServer();
+				connectToServerSubsystem();
 			} catch (serverException& e) {
 				printf(e.sendEr());
 			}
@@ -90,83 +93,35 @@ int main(int argc, char **argv)
 	// if connection setup failed, exit
 	else {
 		printf("connection setup failed, exiting");
-		LogF.writetolog("connection setup failed.");
+		//LogF.writetolog("connection setup failed.");
 		exit(0);
 	}
 	return 0;	// exit
 }
-void communicateWithServer() {				// Run tests/communicate with server
-	// Check that server is synced/ready for connection
-	std::string * received = new std::string();
-
-	bool continu = true;
-
-	while (continu) {
-		int result = server->getStrAnswer(received);
-
-		// if server message is as expected: check that server is setup, synced and ready, continue
-		if (result == 1										//check that message was successfully received
-			&& server->getAnswerType() == S_STATUS			// check that appropriate message type was received
-			&& received->length() > 0						// check that received message exists
-			&& atoi((const char*)&received->at(0)) == 1) {	// check that message received from server was a 'ready' signal (='1') 
-
-			// get user direction
-			int ans = -1;
-			while (ans < 0 || ans > 4)
-				ans = userQuery.iQuery("\nServer Ready\nWhat would you like to do?\n[0] - Quit\n[1] - Request list of active games\n[2] - Live Game Data Entry Mode\n[3] - Access Database\n[4] - Echo Testing\n\n");
-			char temp[32];
-			itoa(ans, temp, 30);	// convert int to string
-			result = server->sendM(CON_TYPE, temp);		// and send to server
-
-			switch (ans) {					// execute user command
-			case 0:
-				break;						// quit connection
-			case 1:
-				continu = playGames();			// start playing games
-				break;
-			case 2:
-				continu = liveDataEntry();		// start live entry mode
-				break;
-			case 3:
-				continu = accessDatabase();		// connect to database
-				break;
-			case 4:
-				continu = launchEchoRoom();		// start echo testing with server
-				break;
-			default:
-				printf("switch error in comminicateWithServer");	// error state
-				break;
-			}
-		}
-		// if server is not ready
-		else {
-			std::string rchar;				// print out failure information
-			if (result == 1)
-				rchar = received->at(0);
-			else
-				rchar = "non-valid result";
-			printf("\nserver not connected, synced or ready, msg result = %d, message type received: %c, received->at(1): %s", result, server->getAnswerType(), rchar);
-			LogF.writetolog("connection setup failed.");
-			
-			continu = false;		// quit trying to connect
-		}
-	}
-}
-bool setupConnection(int argc, char **argv, char * nPORT) {	// Initiates connection 
-
-	// Setup Log File
-	LogF.setLogFileName("Client_log_file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\TestingClient");
-
+bool setupConnection(int argc, char **argv, char* nPORT, char* HOST) {	// Initiates connection 
+	//// Setup Log File
+	//LogF.setLogFileName("Client_log_file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\TestingClient");
 
 	//Check for proper command line usage
 	if (argc < 3) {
-		fprintf(stderr, "\n%s usage: %s hostname portnumber\nUsing default port: %s", argv[0], argv[0], DEFAULT_PORT);
+		fprintf(stderr, "\n%s nusage: %s hostname portnumber\nUsing default host: %s port: %d", argv[0], argv[0], DEFAULT_HOST, DEFAULT_PORT);
 		
+		// setup port with defaults
+		char * temp = new char[7];		// copy from DEFAULT_PORT
+		itoa(DEFAULT_PORT, temp, 10);
+		strncpy(nPORT, temp, 6);
+		nPORT[6] = '\0';				// ensure that nPORT ends with \0, no matter the length of DEFAULT_PORT
+		nPORT[strlen(nPORT)] = '\0';
+
+		// 
+	}
+	else if (argc == 3) {
+		// Set Port Number
+		strncpy(nPORT, argv[2], strlen(argv[2]));
+		nPORT[strlen(argv[2])] = '\0';
+
 	}
 
-	// Set Port Number
-	strncpy(nPORT, argv[2], strlen(argv[2]));
-	nPORT[strlen(argv[2])] = '\0';
 
 	printf("\nSetting up connection to Server\n");
 	return true;
@@ -179,7 +134,7 @@ SOCKET setupListenSocket(char * nPORT, char **argv) {
 	// Initiate Windows Socket
 	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0){
-		LogF.writetolog("WSAStartup failed! Returned:%d\n", result);
+		printf("WSAStartup failed! Returned:%d\n", result);
 		return INVALID_SOCKET;
 	}
 
@@ -192,17 +147,17 @@ SOCKET setupListenSocket(char * nPORT, char **argv) {
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_flags = AI_PASSIVE;
 
-	//Get's address info from system for port and socket connection
+	// Get's address info from system for port and socket connection
 	// check for failure
-	//result = getaddrinfo(argv[1], nPORT, &hints, &socketInfo);
+	// result = getaddrinfo(argv[1], nPORT, &hints, &socketInfo);
 	result = getaddrinfo("localhost", nPORT, &hints, &socketInfo);
 	if (result != 0){
-			// if it failed, write log and print error messages
+		// if it failed, write log and print error messages
 		fprintf(stderr, "getaddrinfo failed with error: %s\n", gai_strerror(result));
 		printf("Calling getaddrinfo with following parameters:\n");
 		printf("\tnodename = %s\n", argv[1]);
 		printf("\tservname (or port) = %s\n\n", nPORT);
-		LogF.writetolog("getaddrinfo failed with error: %d\n", gai_strerror(result));
+		//LogF.writetolog("getaddrinfo failed with error: %d\n", gai_strerror(result));
 		WSACleanup();	//deallocate memory and quit
 		return  INVALID_SOCKET;;
 	}
@@ -215,7 +170,7 @@ SOCKET setupListenSocket(char * nPORT, char **argv) {
 			tempInfo->ai_protocol);
 		if (serverSocket == INVALID_SOCKET) {
 			printf("socket() creation failed with error: %ld\n", WSAGetLastError());
-			LogF.writetolog("socket() creation failed with error: %ld\n", WSAGetLastError());
+			//LogF.writetolog("socket() creation failed with error: %ld\n", WSAGetLastError());
 			WSACleanup();
 			return 1;
 		}
@@ -239,6 +194,56 @@ SOCKET setupListenSocket(char * nPORT, char **argv) {
 	}
 
 	return serverSocket;
+}
+void connectToServerSubsystem() {				// Run tests/communicate with server
+	// Check that server is synced/ready for connection
+	int status = 0;
+	bool continu = true;
+
+	while (continu) {
+		// get server status message
+		int result = server->getIntAnswer(&status, S_STATUS);
+
+		// if server message is as expected: check that server is setup, synced and ready, continue
+		if (result > 0	&& status == 1) {	// check that message received from server was a 'ready' signal (='1') 
+			// get user direction
+			int ans = -1;
+			while (ans < 0 || ans > 4)
+				ans = userQuery.iQuery("\nServer Ready\nWhat would you like to do?\n[0] - Quit\n[1] - Request list of active games\n[2] - Live Game Data Entry Mode\n[3] - Access Database\n[4] - Echo Testing\n\n");
+			char temp[32];
+			itoa(ans, temp, 30);	// convert int to string
+			result = server->sendM(CON_TYPE, temp);	// and send to server
+			server->requestHandled(S_STATUS);		// set request to handled
+
+			switch (ans) {					// execute user command
+			case 0:
+				continu = false;
+				break;						// quit connection
+			case 1:
+				continu = playGames();			// start playing games
+				break;
+			case 2:
+				continu = liveDataEntry();		// start live entry mode
+				break;
+			case 3:
+				continu = accessDatabase();		// connect to database
+				break;
+			case 4:
+				continu = launchEchoRoom();		// start echo testing with server
+				break;
+			default:
+				printf("switch error in comminicateWithServer");	// error state
+				break;
+			}
+		}
+		// if server is not ready
+		else {
+			printf("\nserver not connected, synced or ready, MESSAGE result = %d, message received [server->getAnswerType()]: %u, status: %i", result, server->getAnswerType(), status);
+			//LogF.writetolog("connection setup failed.");
+			//
+			continu = false;		// quit trying to connect
+		}
+	}
 }
 bool playGames() {			// start playing games
 	// Get current game list
@@ -277,22 +282,22 @@ bool launchEchoRoom() {					// Echo testing room with server
 	// make "quit" compare string:
 	std::string quitString = "quit";
 	int result;
-	quitString.insert(quitString.begin(), (char)MSG);	// insert message code to synthesize quitString
+	quitString.insert(quitString.begin(), (char)MESSAGE);	// insert 'MESSAGE' identifier code to synthesize quitString
 	std::string * toSend;								// message to send to server
 	std::string * received = new std::string();			// message received
 
 	// echo with server until user types quit to stop
 	while (true) {
-		result = server->getStrAnswer(received);	// get message from server
+		result = server->getStrAnswer(received, MESSAGE);	// get message from server
 		printf(received->c_str());		// print message received
 
 		// If message was sent successfully
-		if (result == 1) {
+		if (result >= 1) {
 			// get desired message from user
 			toSend = userQuery.sQuery("\nWhat would you like to send to the server? enter 'quit' to quit\n");
 
 			// send message to server
-			server->sendM(MSG, toSend);
+			server->sendM(MESSAGE, toSend);
 
 			// quit if the user requested to
 			if (strcmp(toSend->c_str(), quitString.c_str()) == 0)
@@ -385,7 +390,7 @@ bool printGameList(std::string * currentGameList) {	// print arg as current list
 bool createGame() {					// create a new game
 	// send game creation info
 	std::string * temp = new std::string;
-	if (server->getStrAnswer(temp, N_GQUERY) == 1) {	// If new game query was received
+	if (server->getStrAnswer(temp, N_GQUERY) >= 1) {	// If new game query was received
 		// ask user if they'd like to create default or custom game
 		char ans = userQuery.cQuery("What type of new game would you like to create?\n[D]efault\n[P]inochle (custom)\n[E]uchre (custom)", "DPE");
 
@@ -406,53 +411,37 @@ bool createGame() {					// create a new game
 		}
 
 		// play game
-		gamePlayer newGame('H', server, TYPE, PLAYERS, GOAL, GAMENAME);
+		gamePlayer newGame(&SETTINGS, playerType, server);
 		return newGame.play();
 
 	}
 	return true;
 }
 bool queryForGameInfo(char type) { // gets and sends the new game creation info from user
+	// Set game type
+	SETTINGS.gType = type;
+	
 	// max players
-	PLAYERS = userQuery.iQuery("How many players will this game be for?");
+	SETTINGS.MAXPLAYERS = userQuery.iQuery("How many players will this game be for?");
 
 	// max observers
-	OBSERVERS = userQuery.iQuery("How many observers will this game allow?");
+	SETTINGS.MAXOBSERVERS = userQuery.iQuery("How many observers will this game allow?");
 
 	// winning score
-	GOAL = userQuery.iQuery("What will be the winning score?");
+	SETTINGS.GOAL = userQuery.iQuery("What will be the winning score?");
 
 	// game name
-	GAMENAME = userQuery.sQuery("What will the game name be?");
+	SETTINGS.gameName = *(userQuery.sQuery("What will the game name be?"));
 
 	sendCreationInfo();
 	return true;
 }
 void sendCreationInfo() {	// creates and sends game creation info string
-	std::string gameInfo;
-	char temp[24];
-	
-	// type
-	gameInfo.assign(1, TYPE);
-	gameInfo.append(1, '^');	// Delimiter 
+	// Get info from settings object and send to server
+	std::string* temp = SETTINGS.settingsString();
 
-	// number of players
-	gameInfo.append(itoa(PLAYERS, temp, 10));
-	gameInfo.append(1, '^');	// Delimiter 
-
-	// number of observers
-	gameInfo.append(itoa(OBSERVERS, temp, 10));
-	gameInfo.append(1, '^');	// Delimiter 
-
-	// winning score
-	gameInfo.append(itoa(GOAL, temp, 10));
-	gameInfo.append(1, '^');	// Delimiter 
-
-	// game name
-	gameInfo.append(*GAMENAME);
-
-	// send info to server
-	server->sendM(N_GINFO, &gameInfo);
+	server->sendM(N_GINFO, SETTINGS.settingsString());
+	server->requestHandled(N_GINFO);
 }
 bool joinGame(int toPlay) {		// join the existing game (gameID = toPlay);
 	return true;

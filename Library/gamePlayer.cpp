@@ -11,24 +11,17 @@
 	data objects:
 			char playerType;
 			client * server;
-			char gameType;
-			int maxPlayers;
-			int goal;
+			char gType;
+			int MAXPLAYERS;
+			int GOAL;
 			char* gameName;
 */
 
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\gamePlayer.h"		// Client communication class
 
-
-gamePlayer::gamePlayer(char pType, client * nServer, char TYPE, int PLAYERS, int GOAL, std::string * GAMENAME) {	//Starts a game with the given arguments: player type, server object, game type, max players, max observers, winning score, game name
-	// set game info values
+gamePlayer::gamePlayer(gameSettings *toMake, char pType, client * nServer):gameSettings(*toMake) {		// creates a game with the given arguments
 	playerType = pType;
 	server = nServer;
-	gameType = TYPE;
-	maxPlayers = PLAYERS;
-	goal = GOAL;
-	gameName = new char[GAMENAME->length() + 1];
-	strcpy(gameName, GAMENAME->c_str());
 }
 bool gamePlayer::play() {			// starts playing the game, returns true if player is still connected and may want to continue connection
 	// while the game is not ready to start
@@ -40,26 +33,28 @@ bool gamePlayer::play() {			// starts playing the game, returns true if player i
 		// update game status from server
 		updateGameStatus();
 
+		// wait one second between loops
+		Sleep(500);
+
 		// if game is ready, start play
 		if (gameStatus == 'R')
 			ready = true;
-
-		// wait one second between loops
-		Sleep(1000);
 	}
 
-	switch (gameType) {
+	switch (gType) {
 	case 'E':
 		return playEuchre();
 	case 'P':
 		return playPinochle();
 	default:
-		printf("\ngameType not recognized, quitting...");
+		printf("\ngType not recognized, quitting...");
 		return false;
 	}
 }
-bool gamePlayer::checkPlayerCommand() {// check for commands from player
-	printf("\nchecking for command from player");
+bool gamePlayer::checkPlayerCommand() {	// check for commands from player
+	// if the player is human, allow to check for commands
+	if (playerType == 'H')
+		printf("\nChecking with human player");
 
 	return true;
 }
@@ -88,7 +83,7 @@ bool gamePlayer::playEuchre() {		// plays a game of Euchre
 	else if (ans == 'D')
 		return false;
 	else {
-		printf("\nPlayEuchre, If/Else error");
+		printf("\nPlayEuchx`re, If/Else error");
 		return false;
 	}
 }
@@ -109,10 +104,5 @@ gamePlayer::~gamePlayer() {
 	if(server) {
 		delete server;
 		server = NULL;
-	}
-
-	if (gameName) {
-		delete[] gameName;
-		gameName = NULL;
 	}
 }

@@ -23,14 +23,14 @@ public:
 	bool updateStatus(char newStatus);	// updates current game with new status
 	bool addPlayer(char * name);		// adds player to current node
 	bool addPlayer(std::string * name);	// adds player to current node
-	int getID();				// Returns game's ID
+	int getID();				// Returns current game's ID
 	int playerCount();			// returns player count
 
 	// DATA:
 	gameListNode * next;
 
 private:
-	int gameListNode::getGameID();	// returns new game ID for current game
+	int gameListNode::getGameID();	// returns **NEW** game ID for current game
 	_PROCESS_INFORMATION process;	// thread handles for active games array
 	std::string **playerNames;		// first player/creating player name array
 	std::string gameName;			// game name array
