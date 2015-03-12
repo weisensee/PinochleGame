@@ -1,4 +1,4 @@
-// serverException.h Lucas Weisensee February 2015
+// ServerException.h Lucas Weisensee February 2015
 //
 // exception class for game server
 
@@ -6,9 +6,9 @@
 #include <iostream>
 #include <exception>
 
-class serverException : public std::exception {
+class ServerException : public std::exception {
 public:
 	int error;
-	serverException(int n);
+	ServerException(int n);
 	const char* sendEr() const throw();
 };

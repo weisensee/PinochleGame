@@ -8,9 +8,9 @@ executableName PortNumber
 
 This program will function as a desktop game server for a network based pinochle game. It will:
 -Listen for new connections.
--Manage incoming client connections.
+-Manage incoming Client connections.
 -Spin off processes to handle new games.
--Allow new clients to connect to games in progress.
+-Allow new Clients to connect to games in progress.
 -Keep track of games in progress.
 -Allow games to be added to the database
 -Allow games to be requested from the database.
@@ -30,59 +30,113 @@ This program will function as a desktop game server for a network based pinochle
 
 
 // ********************WINDOWS LIBRARIES::
-//#include "stdafx.h"
 #pragma once
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
 #include <stdlib.h>
+#include <process.h>
 #include <string.h>
 #include <sys/types.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment (lib, "Ws2_32.lib")	//Winsock server needs to be linked with libraries
 
-// *******************PRIVATE LIBRARIES::
+//**************************************************
+// ::PERSONAL LIBRARIES::
+//**************************************************
 #include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\LogFile.h"		//Log writing library
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\cardGame.h"
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\gameList.h"
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\CardGame.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\GameList.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\Client.h"
 
+
+#define DEBUG true
+
+#ifdef DEBUG
+#define DEBUG_IF(cond) if(cond)
+#else
+#define DEBUG_IF(cond) if(false)
+#endif
+
+//**************************************************
+// ::DEFAULTS::
+//**************************************************
 #define DEFAULT_BUFLEN 512
-#define GAME_MANAGER_APPLICATION "pinochleGameManager.exe"			// The individual game manager executable
-#define DEBUG_MODE 1		// debugging mode 1 = on, 0 = off
-LogFile LogF;
-int MAX_THREADS = 20;
-int MAX_GAMES = 10;
-gameList ACTIVE_GAMES(MAX_GAMES);		// List of general info on all active games
-int connections;						// number of connections accepted
-HANDLE connectionsMutex;
+#define DEBUG_MODE 0		// debugging mode 1 = on, 0 = off
+#define MAX_THREADS 100		// default maximum current threads
+#define MAX_GAMES 20		// default maximum active games
 
+//**************************************************
+// ::GLOBAL RESOURCES::
+//**************************************************
+// Server Log File and Mutex Lock
+//LogFile LogF;
+CRITICAL_SECTION logLock;						// log file access lock
+
+// Active Game List and Mutex Lock
+GameList ACTIVE_GAMES(MAX_GAMES);		// List of general info on all active games
+CRITICAL_SECTION GameListLock;			// Active game list critical section lock: for accessing/changing the active games list
+
+// Current Connections and Mutex Lock
+int connections;						// number of connections accepted
+CRITICAL_SECTION connectionsLock;
+
+//**************************************************
+// ::SERVER FUNCTIONS::
+//**************************************************
+
+// Setup and Client Handling:
 void setupServer(int argc, char const *argv[], char * nPORT);		//Sets up the new server, checks inputs
 SOCKET setupListenSocket(char * nPORT);				// Setup Listen socket for accepting new connections
-DWORD WINAPI handleNewClient(LPVOID* newSocket);// Handles a new client when connection is formed
-void incrementClientCount();					// obtains mutex lock and increment/print client counter
-bool playGames(client * curClient);				// sends active game list to client, returns true if client may wish to continue server connection, false otherwise
-void receiveError(SOCKET ClientSocket);			// handles a receive error, prints to log
-bool liveGameDataEntry(client * curClient);		// allows client to enter live game data entry mode, returns true if client may wish to continue server connection, false otherwise
-bool consoleEchoTest(client * curClient);		// launches console echo testing, returns true if client may wish to continue server connection, false otherwise
-bool connectToDatabase(client * curClient);		// connects client to the database, returns true if client may wish to continue server connection, false otherwise
-bool createGame(client * curClient);			// initiates the creation of a new game
-bool joinGame(int choice, client * curClient);	// sends the client to the game specified
+void handleNewClient(void* newSocket);// Handles a new Client when connection is formed
+int singleThreadedHandler(SOCKET ListenSocket);	// debugging mode: alternative Client handler, creates no additional threads
+void incrementClientCount();					// obtains mutex lock and increment/print Client counter
+
+// Executing Client Requests:
+bool playGames(Client * curClient);				// sends active game list to Client, returns true if Client may wish to continue server connection, false otherwise
+bool liveGameDataEntry(Client * curClient);		// allows Client to enter live game data entry mode, returns true if Client may wish to continue server connection, false otherwise
+bool consoleEchoTest(Client * curClient);		// launches console echo testing, returns true if Client may wish to continue server connection, false otherwise
+bool connectToDatabase(Client * curClient);		// connects Client to the database, returns true if Client may wish to continue server connection, false otherwise
+bool createGame(Client * curClient);			// initiates the creation of a new game
+bool addNewGame(CardGame * newGame);			// adds new game to active games list, using appropriate mutex locks
+bool joinGame(int choice, Client * curClient);	// sends the Client to the game specified
+
+// Handling Errors and Closing Down Server:
 void serverCleanUp();							// Cleans up allocated memory, threads and Socket overhead
-void parseNewGameInfo(char * gameInfo, char * type, int * playerNum, int * obsNum, int * goal, std::string * gameName);	// parses the new game info string and copies the info into the appropriate data location
-int singleThreadedHandler(SOCKET ListenSocket);	// debugging mode: alternative client handler, creates no additional threads
+void receiveError(SOCKET ClientSocket);			// handles a receive error, prints to log
 
 
 int main(int argc, char const *argv[]) {
+	DEBUG_IF(true) {
+		printf("\nServer is starting up, press enter to continue... ");
+		char temp[4];
+		std::cin.getline(temp, 3);
+
+		printf("\nArguments passed in: \n");
+		for (int i = 0; i < argc; ++i) {
+			if (i == 3)
+				printf("\n%s", argv[i]);
+			else
+				std::cout << argv[i] << std::endl;
+			std::cin.getline(temp, 3);
+		}
+	}
+
+	
 	char nPORT[7];			// The port number to be used for listening
 	setupServer(argc, argv, nPORT);	// Check inputs and initiate sever settings 
+
+
+	DEBUG_IF(true)
+		printf("\nIn Debugging Mode");
+
 
 	// Create a SOCKET for the server to listen to
 	SOCKET ListenSocket = setupListenSocket(nPORT);
 	printf("\nServer initialized and listen socket setup, preparing to listen on port %s", nPORT);
 
-	// Temp Socket for new clients
+	// Temp Socket for new Clients
 	SOCKET * ClientSocket;	
 
 	// if in debugging mode, run single threaded server
@@ -94,15 +148,14 @@ int main(int argc, char const *argv[]) {
 		//Wait for incoming connections, accept and spin off new thread to handle them... while the ListenSocket is valid
 		while(ListenSocket != INVALID_SOCKET)
 		 {
-
-			//initialize client connection socket
+			//initialize Client connection socket
 			ClientSocket = new SOCKET;
 			*ClientSocket = INVALID_SOCKET;
 
-			//Accept the client's socket
+			//Accept the Client's socket
 			*ClientSocket = accept(ListenSocket, NULL, NULL);
 			if (*ClientSocket == INVALID_SOCKET) {
-				LogF.writetolog("accept failed: %d\n", WSAGetLastError());
+				//printf("accept failed: %d\n", WSAGetLastError());
 				closesocket(ListenSocket);
 				WSACleanup();
 				return 1;
@@ -110,13 +163,11 @@ int main(int argc, char const *argv[]) {
 
 			//spin off thread to handle current user return to listening
 			//ThreadArray[*i%10] = 
-			CreateThread( 
-				NULL,             			// use default security attributes
+			_beginthread(
+				handleNewClient,		// thread function name
 				0,          				// use default stack size  
-				(LPTHREAD_START_ROUTINE)handleNewClient,		// thread function name
-				(void*)*ClientSocket,		// argument to thread function 
-				0,                      	// use default creation flags 
-				0);		// returns the thread identifier 
+				(void*)*ClientSocket		// argument to thread function 
+				);		// returns the thread identifier 
 
 			connections++;
 		}
@@ -125,55 +176,29 @@ int main(int argc, char const *argv[]) {
 	serverCleanUp();
 	return 0;
 }
-int singleThreadedHandler(SOCKET ListenSocket) {		// debugging mode: alternative client handler, creates no additional threads
-	//******  ::DEBUGGING SERVER LOOP::  ***********
-	// Wait for incoming connections, accept and spin off new thread to handle them, only once! 
-	// to maintain single threaded server for testing purposes
-
-	printf("\nEntering debugging mode: single threaded server");
-
-	// Temp Socket for new client
-	SOCKET * ClientSocket;
-
-	//initialize client connection socket
-	ClientSocket = new SOCKET;
-	*ClientSocket = INVALID_SOCKET;
-
-	//Accept the client's socket
-	*ClientSocket = accept(ListenSocket, NULL, NULL);
-	if (*ClientSocket == INVALID_SOCKET) {
-		LogF.writetolog("accept failed: %d\n", WSAGetLastError());
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
-	else
-		printf("\nAccept succeeded.");
-
-	// handle current user in current thread with handleNewClient routine
-	handleNewClient((LPVOID*)*ClientSocket);		// thread function name
-	return 1;
-}
-
 void setupServer(int argc, char const *argv[], char * nPORT) {		//Sets up the new server, prepares to listen for connections
-	//Check for proper command line usage
+	// Use defaults if proper command line usage was not present
 	if (argc < 2) {
 		fprintf(stderr, "\n%s usage: %s port-number\n", argv[0], argv[0]);
-		exit(0);
+		printf("\nUsing defaults: port: %s", DEFAULT_PORT);
+	}
+	// If proper command line usage:
+	else {
+		// Set port number
+		strncpy(nPORT, argv[1], strlen(argv[1]));
+		nPORT[strlen(argv[1])] = '\0';
+		printf("\nPort initiated: %s", nPORT);
 	}
 
-	// Set port number
-	strncpy(nPORT, argv[1], strlen(argv[1]));
-	nPORT[strlen(argv[1])] = '\0';	
-
 	// Initiate server type log file in location specified
-	LogF.setLogFileName("server log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\server");
+	//LogF.setLogFileName("server log file_", "C:\\Users\\Pookey\\OneDrive\\Projects\\PinochleGame\\logs\\server");
 
-	// Initialize Mutex with no security attr, owner or name
-	connectionsMutex = CreateMutex(NULL, false, NULL);
-	if (connectionsMutex == NULL){
-		perror("connections mutex error: ");
-		exit(0);
+	// INITIATE CRITICAL SECTIONS:
+	if (!InitializeCriticalSectionAndSpinCount(&connectionsLock, 0x00000400) ||	/* Check for any errors that  might occur*/
+		!InitializeCriticalSectionAndSpinCount(&GameListLock, 0x00000400) ||
+		!InitializeCriticalSectionAndSpinCount(&logLock, 0x00000400)) {
+			perror("\nMutex Initiation error: ");		// report errors if any
+			exit(0);
 	}
 
 }
@@ -187,7 +212,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	// Initiate Windows Socket
 	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0){
-		LogF.writetolog("WSAStartup failed! Returned:%d\n", result);
+		printf("WSAStartup failed! Returned:%d\n", result);
 		return INVALID_SOCKET;
 	}
 
@@ -204,7 +229,7 @@ SOCKET setupListenSocket(char * nPORT) {
 
 	result = getaddrinfo(NULL, nPORT, &hints, &socketInfo);
 	if (result != 0){
-		LogF.writetolog("getaddrinfo failed with error: %d\n", result);
+		printf("getaddrinfo failed with error: %d\n", result);
 		WSACleanup();	//deallocate memory and quit
 		return  INVALID_SOCKET;;
 	}
@@ -213,7 +238,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	ListenSocket = socket(socketInfo->ai_family, socketInfo->ai_socktype, socketInfo->ai_protocol);
 
 	if (ListenSocket == INVALID_SOCKET) {
-		LogF.writetolog("Error at socket(): %ld\n", WSAGetLastError());
+		printf("Error at socket(): %ld\n", WSAGetLastError());
 		freeaddrinfo(socketInfo);
 		WSACleanup();
 		return  INVALID_SOCKET;;
@@ -222,7 +247,7 @@ SOCKET setupListenSocket(char * nPORT) {
 	//Setup the TCP listening socket
 	result = bind(ListenSocket, socketInfo->ai_addr, (int)socketInfo->ai_addrlen);
 	if (result == SOCKET_ERROR) {
-		LogF.writetolog("bind failed with error: %d\n", WSAGetLastError());
+		printf("bind failed with error: %d\n", WSAGetLastError());
 		freeaddrinfo(socketInfo);
 		closesocket(ListenSocket);
 		WSACleanup();
@@ -232,10 +257,10 @@ SOCKET setupListenSocket(char * nPORT) {
 	//deallocate socket address memory
 	freeaddrinfo(socketInfo);
 
-	//listen for client connection on socket created
+	//listen for Client connection on socket created
 	//SOMAXCONN allows for max reasonable connections as determined by the system
 	if (listen(ListenSocket, SOMAXCONN) == SOCKET_ERROR){				//if listen fails
-		LogF.writetolog("Listen() failed with error: %ld\n", WSAGetLastError());	//print error
+		printf("Listen() failed with error: %ld\n", WSAGetLastError());	//print error
 		closesocket(ListenSocket);										//and close program
 		WSACleanup();
 		return  INVALID_SOCKET;;
@@ -243,56 +268,56 @@ SOCKET setupListenSocket(char * nPORT) {
 
 	return ListenSocket;
 }
-DWORD WINAPI handleNewClient(LPVOID* newSocket) {	// Handles an individual Client::
+void handleNewClient(void* newSocket) {	// Handles an individual Client::
 	// notify user/terminal
 	incrementClientCount();
 
 	//initiate variables
-	client curClient((SOCKET)newSocket);	// Create new client object
+	Client curClient((SOCKET)newSocket);	// Create new Client object
 	//curClient.setName();
-	bool continu = true;		// does the client want to quit
-	int answer, result = 0;			// result of client's interactions
+	bool continu = true;		// does the Client want to quit
+	int answer, result = 0;			// result of Client's interactions
 
-	//Direct the client to the correct path and close the connection when finished
-		/* execute clients request, see "packet specifications.txt" for more info
+	//Direct the Client to the correct path and close the connection when finished
+		/* execute Clients request, see "packet specifications.txt" for more info
 				1: Request the list of active games
 				2: Game Data entry mode
 				3: Initiates database access mode
 				4: console echo testing */
 	while (continu) {
-		// get client connection preference
+		// get Client connection preference
 		std::string temp = "1";
 		curClient.sendM(S_STATUS, &temp);
 		//**************************NEEDS NULL POINTER CHECK*********************************
-		result = curClient.getIntAnswer(&answer);	// save client's answer
+		result = curClient.getIntAnswer(&answer, CON_TYPE);	// save Client's answer
 
 		// if the answer was received successfully
 		if (result == 1) {
-			// initiate the connection the client wants
+			// initiate the connection the Client wants
 			switch (answer) {
-			case 0:						// if the client wants quit						
+			case 0:						// if the Client wants quit						
 				continu = false;		// quit
 				break;
-			case 1:						// if the client wants to play games							
+			case 1:						// if the Client wants to play games							
 				continu = playGames(&curClient);
 				break;
-			case 2:						// allows client to enter live game data entry mode
+			case 2:						// allows Client to enter live game data entry mode
 				continu = liveGameDataEntry(&curClient);
 				break;
-			case 3:						// If the client wants to access the game database
+			case 3:						// If the Client wants to access the game database
 				continu = connectToDatabase(&curClient);
 				break;
 			case 4:
 				continu = consoleEchoTest(&curClient);	// launches console echo testing
 				break;
-			default:		// if client didn't enter a valid command
+			default:		// if Client didn't enter a valid command
 				continu = 1;	// allow them to try again
 				break;
 			}
 		}
-		// if client connection is closed
+		// if Client connection is closed
 		else if (result == -1)
-			return false;		// quit
+			break;		// quit
 		// if message receiving error occurred
 		else {
 			printf("messaging error occurred, result: %d", result);
@@ -300,29 +325,57 @@ DWORD WINAPI handleNewClient(LPVOID* newSocket) {	// Handles an individual Clien
 		}
 	}
 	// End current connection and operations
-	WSACleanup();				//deallocates data after execution's complete
-	return 1;					//close thread
+	//_endthread();;		//close thread
 }
-bool playGames(client * curClient)		// Queries and sends client to desired game-path
+int singleThreadedHandler(SOCKET ListenSocket) {		// debugging mode: alternative Client handler, creates no additional threads
+	//******  ::DEBUGGING SERVER LOOP::  ***********
+	// Wait for incoming connections, accept and spin off new thread to handle them, only once! 
+	// to maintain single threaded server for testing purposes
+
+	printf("\nEntering debugging mode: single threaded server");
+
+	// Temp Socket for new Client
+	SOCKET * ClientSocket;
+
+	//initialize Client connection socket
+	ClientSocket = new SOCKET;
+	*ClientSocket = INVALID_SOCKET;
+
+	//Accept the Client's socket
+	*ClientSocket = accept(ListenSocket, NULL, NULL);
+	if (*ClientSocket == INVALID_SOCKET) {
+		printf("accept failed: %d\n", WSAGetLastError());
+		closesocket(ListenSocket);
+		WSACleanup();
+		return 1;
+	}
+	else
+		printf("\nAccept succeeded.");
+
+	// handle current user in current thread with handleNewClient routine
+	handleNewClient((LPVOID*)*ClientSocket);		// thread function name
+	return 1;
+}
+bool playGames(Client * curClient)		// Queries and sends Client to desired game-path
 {
-	// Send list of current games to client
-	std::string currentGameList = ACTIVE_GAMES.getCurrent();	//gets list of active games for client to connect to
-	curClient->sendM(G_LIST, &currentGameList);		// Send to current list client
+	// Send list of current games to Client
+	std::string currentGameList = ACTIVE_GAMES.getCurrent();	//gets list of active games for Client to connect to
+	curClient->sendM(G_LIST, &currentGameList);		// Send to current list Client
 
 	// Parse user game choice: start new game or join an existing one
 	int choice;
-	int result = curClient->getIntAnswer(&choice, G_CHOICE);	// Get game choice from client
+	int result = curClient->getIntAnswer(&choice, G_CHOICE);	// Get game choice from Client
 
 	// if receive was successful
 	if (result == 1) {
-		if (choice == 0)						// if client chose to setup a new game
+		if (choice == 0)						// if Client chose to setup a new game
 			return createGame(curClient);				// set it up
-		else if (choice > 0)					// If client chose to connect to an existing game
+		else if (choice > 0)					// If Client chose to connect to an existing game
 			return joinGame(choice, curClient);		// connect to it
 	}
 	// if receive failed
 	else {
-		LogF.writetolog("Receive Error: playGames: getIntAnswer: ", result);		// write failure to log and exit
+		printf("Receive Error: playGames: getIntAnswer: ", result);		// write failure to log and exit
 		// if connection was closed
 		if (result == -1)
 			return 0;		// quit connection
@@ -332,17 +385,17 @@ bool playGames(client * curClient)		// Queries and sends client to desired game-
 	return true;
 
 }
-void receiveError(client * curClient)		//handles a receive error, prints to log, returns true if client may wish to continue server connection, false otherwise
+void receiveError(Client * curClient)		//handles a receive error, prints to log, returns true if Client may wish to continue server connection, false otherwise
 {
-		LogF.writetolog("receive failed: ", WSAGetLastError());
+		printf("receive failed: ", WSAGetLastError());
 		closesocket(curClient->getSocket());
 		WSACleanup();
 }
-bool connectToDatabase(client * curClient)	// connects client to the database, returns true if client may wish to continue server connection, false otherwise
+bool connectToDatabase(Client * curClient)	// connects Client to the database, returns true if Client may wish to continue server connection, false otherwise
 {
 	std::string buffer;
 	buffer += "Hi, game database coming soon...";
-	int result = curClient->sendM(0, buffer.c_str());			// send descriptive error message to client
+	int result = curClient->sendM(0, buffer.c_str());			// send descriptive error message to Client
 
 	if (result <= 0)
 		return false;
@@ -350,29 +403,29 @@ bool connectToDatabase(client * curClient)	// connects client to the database, r
 	// return to main menu
 	return true;
 }
-bool createGame(client * curClient) {			//initiates the creation of a new game
+bool createGame(Client * curClient) {			//initiates the creation of a new game
 	// request new game creation info
+	GameSettings SETTINGS(curClient);
 	std::string gameInfo;
-	int result = curClient->getStrQueryAnswer(&gameInfo, N_GQUERY, N_GINFO);
+	int result = curClient->getStrQueryAnswer(&gameInfo, N_GQUERY, N_GINFO);	// send request for and receive new game creation info
+	
+	// if new game info message was received in response
 	if (result == 1) {
-		char type;
-		int playerNum;
-		int obsNum;
-		int goal;
-		std::string gameName;
-		char * infostring = new char[gameName.length() + 1];
-		strcpy(infostring, gameName.c_str());
-
 		// Parse new game info
-		parseNewGameInfo(infostring, &type, &playerNum, &obsNum, &goal, &gameName);
+		SETTINGS.setFromInfoString(gameInfo.c_str());
 
 		// create, launch and manage new game
-		cardGame newGame(curClient, &type, &playerNum, &obsNum, &goal, &gameName);
+		CardGame newGame(SETTINGS);
+		addNewGame(&newGame);
+		newGame.run();
 		return true;
 	}
-	// if client closed connection
+
+
+	// ::ERROR HANDLING::
+	// if Client closed connection
 	else if (result == -1) {
-		printf("client connection unexpectedly closed, result: %d", result);
+		printf("Client connection unexpectedly closed, result: %d", result);
 		return false;
 	}
 	// if new game info was not received
@@ -381,95 +434,87 @@ bool createGame(client * curClient) {			//initiates the creation of a new game
 		return true;
 	}
 }
-void parseNewGameInfo(char * gameInfo, char * type, int * playerNum, int * obsNum, int * goal, std::string * gameName) { // parses the new game info string and copies the info into the appropriate data location
-	// Tokenize string by '^'
-	char * tkns = strtok(gameInfo, "^");
-	
-	// game type
-	*type = gameInfo[0];
+bool addNewGame(CardGame * newGame) {			// adds new game to active games list, using appropriate mutex locks
+	// Request ownership of the critical section.
+	EnterCriticalSection(&GameListLock);
 
-	// Number of players
-	tkns = strtok(NULL, "^") + sizeof(char);
-	*playerNum = std::stoi(tkns, NULL, 10);
+	bool result = ACTIVE_GAMES.add(newGame);
 
-	// Number of Observers
-	tkns = strtok(NULL, "^");
-	*obsNum = std::stoi(tkns, NULL, 10);
+	// Release ownership of the critical section.
+	LeaveCriticalSection(&GameListLock);
 
-	// Winning Score
-	tkns = strtok(NULL, "^");
-	*goal = std::stoi(tkns, NULL, 10);
-
-	// game Name
-	tkns = strtok(NULL, "^");
-	gameName = new std::string(tkns);	// copy name to new arg
+	// return success
+	return result;
 }
+bool consoleEchoTest(Client * curClient) {		// launches console echo testing, returns true if Client may wish to continue server connection, false otherwise
+	// send welcome message to Client
+	int result = curClient->sendM(MESSG, "Welcome to the console echo test! what would you like me to echo?");
 
-bool consoleEchoTest(client * curClient) {		// launches console echo testing, returns true if client may wish to continue server connection, false otherwise
-	// send welcome message to client
-	int result = curClient->sendM(MSG, "Welcome to the console echo test! what would you like me to echo?");
-
-	// echo messages with client until they want to quit
+	// echo messages with Client until they want to quit
 	std::string answer;
 	bool quit = false;
 	while (!quit)	
 	{
-		result = curClient->getStrAnswer(&answer);
+		result = curClient->getStrAnswer(&answer, MESSG);
 
 		if (strcmp(answer.c_str(), "quit") == 0) {
-			printf("\nclient message matches 'quit', client message: %s", answer.c_str());
+			printf("\nClient message matches 'quit', Client message: %s", answer.c_str());
 			quit = true;
 		}
 
-		// if the client shuts down the connection or sends message "quit"
-		else if (result == -1)
+		// if the Client shuts down the connection or sends message "quit"
+		else if (result <= 0)
 			return false;	// quit on the server end as well
 
 		// if the message was received successfully
-		else if (result == 1) {
+		else if (result >= 1) {
 			answer.insert(0, "received: ");	// modify
-			curClient->sendM(MSG, &answer);
+			curClient->sendM(MESSG, &answer);
 		}
 
 	}
 
 	return true;
 }
-bool liveGameDataEntry(client * curClient) {				// allows client to enter live game data entry mode, returns true if client may wish to continue server connection, false otherwise
+bool liveGameDataEntry(Client * curClient) {				// allows Client to enter live game data entry mode, returns true if Client may wish to continue server connection, false otherwise
 	printf("executing \"liveGameDataEntry\" function");
 	return true;
 }
-// Adds specified client to game
-bool joinGame(int choice, client * curClient)				// sends the client to the game specified
+bool joinGame(int choice, Client * curClient)				// sends the Client to the game specified
 {
-	int successful = ACTIVE_GAMES.addclient(choice, curClient);		// adds client to game, returns result
+	int successful = ACTIVE_GAMES.addClient(choice, curClient);		// adds Client to game, returns result
 	if(!successful)
-		LogF.writetolog("ACTIVE_GAMES.addclient() failure: ", successful);	// write to log if add client failed
-	exit(EXIT_SUCCESS);
-}
-
-void serverCleanUp() { // Cleans up allocated memory, threads and Socket overhead
+		printf("ACTIVE_GAMES.addClient() failure: ", successful);	// write to log if add Client failed
 	
-	LogF.writetolog("Exiting server");
+	//debug
+	printf("\nClient: %s added to game: %d", curClient->getName().c_str(), choice);
+
+	ExitThread(0);
+}
+void serverCleanUp() { // Cleans up allocated memory, threads and Socket overhead
+	// release critical sections
+	DeleteCriticalSection(&connectionsLock);
+	DeleteCriticalSection(&GameListLock);
+	DeleteCriticalSection(&logLock);
+
+	WSACleanup();			//deallocates data after execution's complete
+
+	printf("Exiting server");
 
 	// Do other stuff
 }
+void incrementClientCount() {	// obtains mutex lock and increment/print Client counter
+	// Request ownership of the critical section.
+	EnterCriticalSection(&connectionsLock);
 
-void incrementClientCount() {	// obtains mutex lock and increment/print client counter
-	// get mutex lock on connections count
-	DWORD err = WaitForSingleObject(connectionsMutex, INFINITE);
-	if (err != WAIT_ABANDONED) {
-		printf("\nNew Client connected, total: %i", connections);
-		connections++;
-	}
-	// check mutex wait success
-	else {
-		perror("Mutex wait error");
-		exit(0);
-	}
+	printf("\nNew Client connected, total: %i", connections);
+	connections++;
+
+	// Release ownership of the critical section.
+	LeaveCriticalSection(&connectionsLock);
 }
 /*
-void createGameProcess(client * curClient)	{		// Creates a new thread for a new game manager by the given client
+void createGameProcess(Client * curClient)	{		// Creates a new thread for a new game manager by the given Client
 // Initiate variables
 STARTUPINFO startupInfo;
 HANDLE child_IN_Rd = NULL;
@@ -482,19 +527,19 @@ ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION));	// Ensure process data-st
 
 // Create a pipe for the child process's STD OUT
 if (!CreatePipe(&child_OUT_Rd, &child_OUT_Wr, &secAttr, 0))
-LogF.writetolog("StdoutRd CreatePipe");
+printf("StdoutRd CreatePipe");
 
 // Ensure the read handle to the pipe for STDOUT is not inherited
 if (!SetHandleInformation(child_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
-LogF.writetolog("Stdout SetHandleInformation");
+printf("Stdout SetHandleInformation");
 
 // Create a pipe for the child process's STDIN.
 if (!CreatePipe(&child_IN_Rd, &child_IN_Wr, &secAttr, 0))
-LogF.writetolog("Stdin CreatePipe");
+printf("Stdin CreatePipe");
 
 // Ensure the write handle to the pipe for STDIN is not inherited
 if (!SetHandleInformation(child_IN_Wr, HANDLE_FLAG_INHERIT, 0))
-LogF.writetolog("Stdin SetHandleInformation");
+printf("Stdin SetHandleInformation");
 
 // Create new game process
 CreateProcess(GAME_MANAGER_APPLICATION,
@@ -513,8 +558,8 @@ DWORD ready = WaitForInputIdle(processInfo->hProcess, 5000);
 
 if (ready == 0)					// If the new process if ready to receive game info
 if (!ACTIVE_GAMES.addGame(processInfo, curClient))
-LogF.writetolog("game list full");
+printf("game list full");
 else
-LogF.writetolog("Process initiation failure: ", ready);		// Otherwise write failure to log file
+printf("Process initiation failure: ", ready);		// Otherwise write failure to log file
 }
 */

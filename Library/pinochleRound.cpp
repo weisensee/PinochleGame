@@ -7,14 +7,14 @@
 		Functions:
 		pinochleRound();
 		~pinochleRound();
-		int playcard(char card);
+		int playCard(char Card);
 		
 		Data:
 		char handdealt;
 		short bid;
 		char bidwinner[2];
 		short * meld;
-		char cardsplayed[48];
+		char Cardsplayed[48];
 */
 
 #include "pinochleRound.h"
@@ -23,7 +23,10 @@ pinochleRound::pinochleRound() {	// Default Constructor
 	bid = 0;
 }
 
-int pinochleRound::playcard(char card) {	// Play a card during a trick
-	printf("\nrunning playcard() function with card: %c", card);
+int pinochleRound::playCard(char Card) {	// Play a Card during a trick
+	printf("\nrunning playCard() function with Card: %c", Card);
 	return true;
+}
+bool inPlay() {				// returns true if the game is in play	
+	return false;
 }

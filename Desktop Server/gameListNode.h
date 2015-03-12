@@ -1,4 +1,4 @@
-/*	gameListNode.h -- Online Pinochle Game -- Lucas Weisensee November 2014
+/*	GameListNode.h -- Online Pinochle Game -- Lucas Weisensee November 2014
 
 	stores game items for active game list
 
@@ -10,15 +10,15 @@
 #pragma once
 #include <string>
 #include <windows.h>
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\Client.h"
 
 
-class gameListNode
+class GameListNode
 {
 public:
-	gameListNode();
-	gameListNode(_PROCESS_INFORMATION * processInfo, client * curClient);
-	~gameListNode();
+	GameListNode();
+	GameListNode(_PROCESS_INFORMATION * processInfo, Client * curClient);
+	~GameListNode();
 	std::string getInfoString();				//returns game information as string
 	bool updateStatus(char newStatus);	// updates current game with new status
 	bool addPlayer(char * name);		// adds player to current node
@@ -27,10 +27,10 @@ public:
 	int playerCount();			// returns player count
 
 	// DATA:
-	gameListNode * next;
+	GameListNode * next;
 
 private:
-	int gameListNode::getGameID();	// returns **NEW** game ID for current game
+	int GameListNode::getGameID();	// returns **NEW** game ID for current game
 	_PROCESS_INFORMATION process;	// thread handles for active games array
 	std::string **playerNames;		// first player/creating player name array
 	std::string gameName;			// game name array

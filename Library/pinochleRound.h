@@ -12,13 +12,15 @@
 */
 
 #include <iostream>
-		
+#include "..\Library\Card.h"
+
 class pinochleRound
 {
 public:
 	pinochleRound();
 	//~pinochleRound();
 	int playcard(char card);
+	bool inPlay();				// returns true if the game is in play	
 private:
 	char handdealt;
 	short bid;

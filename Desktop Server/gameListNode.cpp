@@ -1,20 +1,20 @@
-/*	gameListNode.cpp -- Online Pinochle Game -- Lucas Weisensee November 2014
+/*	GameListNode.cpp -- Online Pinochle Game -- Lucas Weisensee November 2014
 
 	functions for game list node items
 
 */
 
-#include "gameListNode.h"
+#include "GameListNode.h"
 
 
 // Default constructor
-gameListNode::gameListNode()
+GameListNode::GameListNode()
 {
 	gameID = 0;
 	// default construction code
 }
 
-gameListNode::gameListNode(_PROCESS_INFORMATION * processInfo, client * curClient)	//Creates a game list node with the passed in attributes
+GameListNode::GameListNode(_PROCESS_INFORMATION * processInfo, Client * curClient)	//Creates a game list node with the passed in attributes
 {
 	process = *processInfo;		// copy process info
 	gameID = getGameID();		// get new game ID
@@ -23,8 +23,8 @@ gameListNode::gameListNode(_PROCESS_INFORMATION * processInfo, client * curClien
 	*playerNames = new std::string[max_players];
 }
 
-gameListNode::~gameListNode() {		//deallocate reserved memory
-	for (int i = 0; i < max_players; ++i)	//check each client name *
+GameListNode::~GameListNode() {		//deallocate reserved memory
+	for (int i = 0; i < max_players; ++i)	//check each Client name *
 	{
 		if(playerNames[i])
 			delete playerNames[i];	//delete it
@@ -32,14 +32,14 @@ gameListNode::~gameListNode() {		//deallocate reserved memory
 			i += 100;
 	}
 }
-bool gameListNode::addPlayer(char * name) {		// adds player to current node
+bool GameListNode::addPlayer(char * name) {		// adds player to current node
 	std::string * temp = new std::string(name);		// set it
 	return addPlayer(temp);
 }
-int gameListNode::playerCount() {			// returns player count
+int GameListNode::playerCount() {			// returns player count
 	return players;
 }
-bool gameListNode::addPlayer(std::string * name) {	// adds player to current node
+bool GameListNode::addPlayer(std::string * name) {	// adds player to current node
 	players++;
 
 	for (int i = 0; i < max_players; i++) {								// For each possible player
@@ -51,8 +51,8 @@ bool gameListNode::addPlayer(std::string * name) {	// adds player to current nod
 	}
 	return false;
 }
-std::string gameListNode::getInfoString()				// returns game information as string see "server packet specifications.txt"
-{														// X^gameID^gameName^gamecreator^clienta^clientb^clientn
+std::string GameListNode::getInfoString()				// returns game information as string see "server packet specifications.txt"
+{														// X^gameID^gameName^gamecreator^Clienta^Clientb^Clientn
 
 	std::string * temp = new std::string(status + '^' + gameID + '^' + gameName.c_str() + '^' + *playerNames[0]->c_str());
 
@@ -65,7 +65,7 @@ std::string gameListNode::getInfoString()				// returns game information as stri
 	return temp->c_str();
 }
 
-bool gameListNode::updateStatus(char newStatus)	//updates current game with new status returns true if success
+bool GameListNode::updateStatus(char newStatus)	//updates current game with new status returns true if success
 {
 	if (newStatus)
 		status = newStatus;
@@ -74,9 +74,9 @@ bool gameListNode::updateStatus(char newStatus)	//updates current game with new 
 	return true;
 }
 
-int gameListNode::getID() {				// Returns game's ID
+int GameListNode::getID() {				// Returns game's ID
 	return gameID;
 }
-int gameListNode::getGameID() {
+int GameListNode::getGameID() {
 	return rand();
 }

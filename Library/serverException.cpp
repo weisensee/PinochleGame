@@ -1,14 +1,14 @@
-// serverException.cpp Lucas Weisensee February 2015
+// ServerException.cpp Lucas Weisensee February 2015
 //
 // exception class functions for game server
 
-#include "serverException.h"
+#include "ServerException.h"
 
-serverException::serverException(int n) {
+ServerException::ServerException(int n) {
 	error = n;
 }
 
-  const char* serverException::sendEr() const throw()			// returns "sending error: " + e
+  const char* ServerException::sendEr() const throw()			// returns "sending error: " + e
   {
 	  std::string * temp = new std::string("sending Error: ");
 	  char * buf;

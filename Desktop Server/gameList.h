@@ -1,42 +1,43 @@
-/*	gameList.h -- Online Pinochle Game -- Lucas Weisensee November 2014
+/*	GameList.h -- Online Pinochle Game -- Lucas Weisensee November 2014
 		
 		Stores list of active games
 
 		Allows server to add, kill and communicate with games and get list of current games
 
-		Maintains access to the active game object ('cardGame') through which it accesses and uses the shared memory space
+		Maintains access to the active game object ('CardGame') through which it accesses and uses the shared memory space
 
 		TO DO:
 			-interprocess communication with child game manager process:
 				-name change
-				-client 1 change/quit
-				-# of clients changes 
+				-Client 1 change/quit
+				-# of Clients changes 
 
 */
 #define WIN32_LEAN_AND_MEAN
 #pragma once
 #include <list>
+#include <time.h>
 #include <algorithm>
 
-#include "gameListNode.h"
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\client.h"
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\cardGame.h"
+#include "GameListNode.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Library\Client.h"
+#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\Desktop Server\CardGame.h"
 
-class gameList
+class GameList
 {	
 public:
 	//**************************************************
 	// ::CONSTRUCTORS AND DESTRUCTORS::
 	//**************************************************
-	gameList(int MAX_LENGTH);	//constructs a game list of linked nodes with max length MAX_LENGTH
-	gameList();					//constructs a game list with MAX_LENGTH = 10 (see gameList.cpp)
-	~gameList();				//destructor
+	GameList(int MAX_LENGTH);	//constructs a game list of linked nodes with max length MAX_LENGTH
+	GameList();					//constructs a game list with MAX_LENGTH = 10 (see GameList.cpp)
+	~GameList();				//destructor
 
 	//**************************************************
 	// ::DATA MANIPULATION::
 	//**************************************************
-	int addclient(int gameID, client * newclient);	//add specified client to specified game
-	bool add(cardGame * toAdd);							// add toAdd to list of active games
+	int addClient(int gameID, Client * newClient);	//add specified Client to specified game
+	bool add(CardGame * toAdd);							// add toAdd to list of active games
 	void remove(int gameID);	//remove matching game from list
 
 	//**************************************************
@@ -51,7 +52,8 @@ private:
 	//**************************************************
 
 	// List structure
-	std::list<cardGame*> games;
+	int nextGameId();			// returns next available game id
+	std::list<CardGame*> games;
 
 	// Variables::
 	int max;			//total active games

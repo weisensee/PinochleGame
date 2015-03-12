@@ -1,28 +1,43 @@
-/*	query -- Lucas Weisensee February 2015
+/*	Query -- Lucas Weisensee February 2015
 
 	manages user queries at the terminal
 
 	functions
 
-	see query.h for more information
+	see Query.h for more information
 */
 
-#include "query.h"
+#include "Query.h"
 
-query::query(){}
-query::~query(){}
+Query::Query(){}
+Query::~Query(){}
 
-int query::iQuery(char * query) {	// Queries user for integer
-	// print query to terminal
-	printf(query);
-	char buffer[128];
+int Query::iQuery(char * Query) {	// Queries user for integer
+	//// print Query to terminal
+	//printf(Query);
+	//char buffer[128];
 
-	// get user response
-	std::cin.getline(buffer, 128, '\n');
-	return atoi(buffer);
+	//// get user response
+	//int ans;
+	//std::cin >> ans;
+	//return ans;	
+	std::string input;
+	int ans;
+	while (true) {
+		printf(Query);
+		std::getline(std::cin, input);
+
+		// This code converts from string to number safely.
+		std::stringstream myStream(input);
+		if (!(myStream >> ans))
+			printf("\nInvalid number, please try again:  ");
+		else
+			break;
+	}
+	return ans;
 }
-char query::cQuery(char * query, char * answers) {	// Queries user for char answer
-	printf(query);
+char Query::cQuery(char * Query, char * answers) {	// Queries user for char answer
+	printf(Query);
 	char ans;
 	do {
 		// print what answers are acceptable
@@ -32,15 +47,23 @@ char query::cQuery(char * query, char * answers) {	// Queries user for char answ
 		std::cin.get(ans);
 		std::cin.ignore(100, '\n');
 
-		// check that ans appears somewhere in answers (acceptable answers to query), check the upper and lower case version of user answer 'ans'
+		// check that ans appears somewhere in answers (acceptable answers to Query), check the upper and lower case version of user answer 'ans'
 		if (strchr(answers, tolower(ans)) != NULL || strchr(answers, toupper(ans)) != NULL)
 			return ans;
 
 		// if answer did not match acceptable answers, restart
 	} while (true);
 }
-std::string * query::sQuery(char * query) {		// Queries user for string answer
-	printf(query);
+bool Query::bQuery(char * Query) {					// Queries user for true/false answer
+	// get answer
+	char ans = Query::cQuery(Query, "TFYN");
+	ans = toupper(ans);
+
+	// return true if an affirming answer was entered
+	return (ans == 'T' || ans == 'Y');
+}
+std::string * Query::sQuery(char * Query) {		// Queries user for string answer
+	printf(Query);
 
 	// get answer from user
 	char buffer[256];
@@ -52,7 +75,7 @@ std::string * query::sQuery(char * query) {		// Queries user for string answer
 
 }
 
-void query::printAcceptableAns(char * answers) {	//prints what answers are acceptable
+void Query::printAcceptableAns(char * answers) {	//prints what answers are acceptable
 	if (answers) {
 		std::cout << "\nPlease enter: " << answers[0];	// print first possible answer
 		int len = strlen(answers);
@@ -64,5 +87,5 @@ void query::printAcceptableAns(char * answers) {	//prints what answers are accep
 	}
 	// if the string wasnt valid:
 	else
-		printf("invalid argument query::printAcceptableAns");
+		printf("invalid argument Query::printAcceptableAns");
 }

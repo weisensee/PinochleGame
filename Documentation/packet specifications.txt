@@ -7,30 +7,47 @@ Packet and Client Communication Specifications for the Desktop Pinochle Server
 	Each type of query/response has a message code that corresponds to the exact type of message it is
 
 	the code is an UNSIGNED CHAR at the head of each packet
-		ODD codes correspond to server messages
-		EVEN codes correspond to client messages
+		ODD codes correspond to SERVER messages to CLIENT
+		EVEN codes correspond to CLIENT messages to SERVER
 
 ***************************************************************************************
 MESSAGE TITLE:
 ***************************************************************************************
 TITLE 		:: CODE  ::	DESCRIPTION
-MSG 		::	0	 :: Error/Message to client
+ILLEGL		:: 98	 :: Illegal message code, not used
+UNKNOWN		:: 99	 ::	Unknown message type
+MESSAGE 	:: 100	 :: Error/Message to client
 S_STATUS	::	1	 :: Server Status
 CON_TYPE	::	2	 :: Client Connection Type
 R_PNAME 	::	3	 :: Request Player Name
 PNAME 		::	4	 :: Player Name
 G_LIST	 	::	5	 ::	Active Game List
 G_CHOICE 	::	6	 :: Game Choice (connect to)
-G_CON_STAT	::	7	 :: Game Connection Status
-BEC_PLAYER	::	8	 :: Become Player
-CREATE_G	::	10	 :: Create Game
+G_CON_STAT	::	7	 :: Game Connection Status and player number
 RESTART_G 	::	11	 :: Restart query
 RESTART_ANS ::	12	 :: Restart answer
 N_GQUERY 	::	13	 :: Query For new Game Creation Info
 N_GINFO 	::	14	 :: New Game Creation Info
-BEC_OBS		::  16	 :: Become Observer
-STAT_QUERY	::	18	 :: Status query of current game
-G_STATUS	::	19	 :: Status of current game
+PING_QRY 	::	15	 :: Ping for recent activity
+PING_ANS 	::	16	 :: Answer Ping for recent activity
+
+ ::GAME SETUP::
+STAT_QUERY	::	20	 :: Status query of current game
+G_STATUS	::	21	 :: Status of current game
+BEC_PLAYER	::	22	 :: Become Player
+BEC_OBS		::	24	 :: Become Observer
+PL_POS		::	25	 :: Current Players position in current game
+
+ ::GAMEPLAY::
+GAM_START	::	39 	 :: Game Starting
+HAND_DEALT	:: 	41 	 :: Hand of cards dealt to player
+KITTY_FLP	:: 	43 	 :: Card Played on the table
+ORDER_UP	::	44 	 :: Order up answer
+TRMP_ORD	:: 	45 	 :: Trump was ordered notification
+REQ_PLAY	::	47	 :: Request card play from client
+PLY_CARD	::	48	 :: Play card on trick
+ACC_CARD	::	49	 :: Accept card that was played on trick
+
 
 ***************************************************************************************
 MESSAGE DESCRIPTION:
@@ -59,11 +76,12 @@ CODE ::	DESCRIPTION
 
 5	 ::	Active Game List
 		1: Char array of games separated by "/": game1/game2/game3/*
-			game: X^gameID^gameName^gamecreator^playera^playerb^playern
-				X:status
+			game: type^status^ID^gamename^creator^maxplayers^maxobservers^goal
+				status: char: see 
 					P: playing
 					W: waiting
 					F: full
+					Q: quit
 				gameID: (int) ID number for specific game
 				gameName: string
 				playerNames: string
@@ -118,7 +136,14 @@ CODE ::	DESCRIPTION
 18	 :: Status query of current game
 		(optional char[]) gameName
 
-19	 :: Status of current game
+21	 :: Status of current game
 		(status)['^'](game name)
 		(char) status
+			R 	::	Ready to start
+			P 	:: 	Playing currently
+			W 	:: 	Waiting for more players
+			Q 	::  Game has quit/is quitting
 		(char *) gameName
+
+21??	 :: Current Players position in current game
+		(int) player number

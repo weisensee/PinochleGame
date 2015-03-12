@@ -1,11 +1,11 @@
-/*	card.cpp -- Card Game 'card' class 
+/*	Card.cpp -- Card Game 'Card' class 
 	Lucas Weisensee 2015
 	
-	functions for card class
-		stores and operates on a single card
+	functions for Card class
+		stores and operates on a single Card
 
 	Card values:
-	the card value is the exact card in the deck that the card represents
+	the Card value is the exact Card in the deck that the Card represents
 	the values are 1-24 such that
 	1,2,...6 = A,10,K,Q,J,9 = value%6
 	and
@@ -15,30 +15,30 @@
 
 #pragma once
 
-#include "C:\Users\Pookey\OneDrive\Projects\PinochleGame\library\card.h"
+#include "..\library\Card.h"
 
-card::card(char current) {
+Card::Card(char current) {
 	value = current;
 }
-card::card() {
+Card::Card() {
 	value = 0;
 }
-card::~card() {}
-char card::chr() {		// returns the char value of the current card
+Card::~Card() {}
+char Card::chr() {		// returns the char value of the current Card
 	return value;
 }
-int card::suit() {		// returns the suit of the current card, integer 0 - 3
-	return card::suit(value);
+int Card::suit() {		// returns the suit of the current Card, integer 0 - 3
+	return Card::suit(value);
 }
-int card::suit(char n) {// returns the suit of card n, integer 0 - 3
+int Card::suit(char n) {// returns the suit of Card n, integer 0 - 3
 	return n / 6;
 }
-char * card::str() {	// returns the string corresponding to the cards face (Kspads, J diamonds, etc...)
-	return card::str(value);
+char * Card::str() {	// returns the string corresponding to the Cards face (Kspads, J diamonds, etc...)
+	return Card::str(value);
 }
-char * card::str(char n) {	// returns the string corresponding to n's face (Kspads, J diamonds, etc...)
+char * Card::str(char n) {	// returns the string corresponding to n's face (Kspads, J diamonds, etc...)
 	// establish suit and face value
-	int suit = card::suit();
+	int suit = Card::suit();
 	int face = n % 6;
 
 	// build face string
@@ -88,31 +88,31 @@ char * card::str(char n) {	// returns the string corresponding to n's face (Kspa
 	return temp;
 
 }
-bool card::operator==(card &toCompare) {	// returns true if toCompare matches current card, false otherwise
+bool Card::operator==(Card &toCompare) {	// returns true if toCompare matches current Card, false otherwise
 	return toCompare.value == value;
 }
-bool card::operator==(char &toCompare) {	// returns true if toCompare matches current card, false otherwise
+bool Card::operator==(char &toCompare) {	// returns true if toCompare matches current Card, false otherwise
 	return toCompare == value;
 }
-bool card::operator==(int toCompare) {	// returns true if toCompare matches current card, false otherwise
+bool Card::operator==(int toCompare) {	// returns true if toCompare matches current Card, false otherwise
 	return toCompare == (int)value;
 }
-bool card::operator<(card toCompare) {		// returns true if toCompare is greater than this
+bool Card::operator<(Card toCompare) {		// returns true if toCompare is greater than this
 	// if they are the same suit, compare relative values
-	return (card::suit() == toCompare.suit()) && (value%6 > toCompare.value%6);
+	return (Card::suit() == toCompare.suit()) && (value%6 > toCompare.value%6);
 }
-bool card::operator>(card toCompare) {		// returns true if toCompare is less than this
+bool Card::operator>(Card toCompare) {		// returns true if toCompare is less than this
 	// if they are the same suit, compare relative values
-	return (card::suit() == toCompare.suit()) && (value % 6 < toCompare.value % 6);
+	return (Card::suit() == toCompare.suit()) && (value % 6 < toCompare.value % 6);
 }
-bool card::operator<(int toCompare) {		// returns true if toCompare is greater than this
+bool Card::operator<(int toCompare) {		// returns true if toCompare is greater than this
 	// if they are the same suit, compare relative values
-	return (card::suit() == card::suit(toCompare)) && (value % 6 > toCompare % 6);
+	return (Card::suit() == Card::suit(toCompare)) && (value % 6 > toCompare % 6);
 }
-bool card::operator>(int toCompare) {		// returns true if toCompare is less than this
+bool Card::operator>(int toCompare) {		// returns true if toCompare is less than this
 	// if they are the same suit, compare relative values
-	return (card::suit() == card::suit(toCompare)) && (value % 6 < toCompare % 6);
+	return (Card::suit() == Card::suit(toCompare)) && (value % 6 < toCompare % 6);
 }
-void card::operator=(int toSet) {			// sets the current card value to toSet
+void Card::operator=(int toSet) {			// sets the current Card value to toSet
 	value = toSet;
 }
